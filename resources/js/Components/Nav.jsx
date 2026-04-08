@@ -111,29 +111,29 @@ const NavV2 = ({ isDarkMode = true, wishlist = [] }) => {
         [],
     );
 
-    const companyDropdownItems = useMemo(
-        () => [
-            {
-                label: "Dashboard",
-                href: route("company.dashboard"),
-                icon: LayoutDashboard,
-                method: "get",
-            },
-            {
-                label: "Company Profile",
-                href: route("company.profile"),
-                icon: Building2,
-                method: "get",
-            },
-            {
-                label: "Logout",
-                href: route("company.logout"),
-                icon: LogOut,
-                method: "post",
-            },
-        ],
-        [],
-    );
+    // const companyDropdownItems = useMemo(
+    //     () => [
+    //         {
+    //             label: "Dashboard",
+    //             href: route("company.dashboard"),
+    //             icon: LayoutDashboard,
+    //             method: "get",
+    //         },
+    //         {
+    //             label: "Company Profile",
+    //             href: route("company.profile"),
+    //             icon: Building2,
+    //             method: "get",
+    //         },
+    //         {
+    //             label: "Logout",
+    //             href: route("company.logout"),
+    //             icon: LogOut,
+    //             method: "post",
+    //         },
+    //     ],
+    //     [],
+    // );
 
     // ✅ حساب effectiveUser و effectiveCompany
     const isCompanyUser =

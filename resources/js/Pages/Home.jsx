@@ -7,609 +7,159 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    MapPin,
+    Brain,
     ArrowRight,
+    ArrowLeft,
     MessageCircle,
     X,
-    Heart,
-    Shield,
-    Tag,
-    Award,
-    Compass,
-    Sun,
-    ArrowLeft,
-    ArrowRight as ChevronRight,
-    Calendar,
-    Users,
-    Search,
+    ShieldCheck,
     Sparkles,
-    CircleX,
-    Globe2,
-    Building,
+    Sun,
+    Moon,
+    Search,
+    HeartHandshake,
+    BookOpenText,
+    Activity,
+    CheckCircle2,
+    NotebookPen,
+    Clock3,
+    Users,
     Star,
-    Clock,
-    Map,
-    Mountain,
-    Umbrella,
+    CircleHelp,
 } from "lucide-react";
 import { Head, usePage, Link } from "@inertiajs/react";
-import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import Navbar from "../Components/Nav";
 import Footer from "../Components/Footer";
 import ChatBot from "../Components/ChatBot";
 
-// New Unique Offer Card Design
-const OfferCard = React.memo(
-    ({
-        offer,
-        translations,
-        isDarkMode,
-        calculateDiscount,
-        toggleFavorite,
-        favorites,
-        loadingFavorite,
-    }) => {
-        const discount = calculateDiscount(offer.price, offer.discount_price);
-
-        return (
-            <motion.div
-                whileHover={{ y: -6 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className={`group rounded-2xl overflow-hidden ${
-                    isDarkMode ? "bg-gray-800" : "bg-white"
-                } shadow-md hover:shadow-xl transition-all duration-300 flex flex-col h-full`}
-            >
-                {/* Image Section */}
-                <div className="relative overflow-hidden aspect-[4/3]">
-                    <img
-                        src={offer.image || "/images/placeholder-offer.jpg"}
-                        alt={offer.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                        onError={(e) =>
-                            (e.target.src = "/images/placeholder-offer.jpg")
-                        }
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-
-                    {/* Discount Badge - Top Right - Eye-catching */}
-                    {discount && (
-                        <div className="absolute top-0 right-0">
-                            <div className="relative">
-                                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white px-4 py-3 rounded-bl-2xl shadow-2xl">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-black leading-none">
-                                            {discount}%
-                                        </div>
-                                        <div className="text-[10px] font-bold uppercase tracking-wide">
-                                            OFF
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Category & Favorite - Bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                        {offer.category && (
-                            <span className="inline-block bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-semibold">
-                                {offer.category}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => toggleFavorite(offer.id, "offer_id")}
-                            disabled={loadingFavorite[`offer_${offer.id}`]}
-                            className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${
-                                favorites[`offer_${offer.id}`]?.is_favorite
-                                    ? "bg-red-500 scale-110"
-                                    : "bg-white/90 hover:bg-white"
-                            } ${
-                                loadingFavorite[`offer_${offer.id}`]
-                                    ? "opacity-50"
-                                    : ""
-                            }`}
-                            aria-label="Toggle favorite"
-                        >
-                            <Heart
-                                size={18}
-                                className={
-                                    favorites[`offer_${offer.id}`]?.is_favorite
-                                        ? "text-white fill-white"
-                                        : "text-gray-700"
-                                }
-                            />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="p-5 flex flex-col flex-grow">
-                    {/* Title */}
-                    <h3
-                        className={`text-xl font-bold mb-3 ${
-                            isDarkMode ? "text-white" : "text-gray-900"
-                        } line-clamp-1 group-hover:text-blue-600 transition-colors`}
-                    >
-                        {offer.title}
-                    </h3>
-
-                    {/* Location */}
-                    <div className="flex items-center gap-2 mb-3">
-                        <div
-                            className={`p-1.5 rounded-lg ${
-                                isDarkMode ? "bg-gray-700" : "bg-gray-100"
-                            }`}
-                        >
-                            <MapPin size={14} className="text-blue-600" />
-                        </div>
-                        <span
-                            className={`text-sm font-medium ${
-                                isDarkMode ? "text-gray-300" : "text-gray-600"
-                            } line-clamp-1`}
-                        >
-                            {offer.destination_location}
-                        </span>
-                    </div>
-
-                    {/* Dates */}
-                    <div
-                        className={`flex items-center gap-2 mb-4 text-xs ${
-                            isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
-                    >
-                        <Calendar size={13} />
-                        <span>
-                            {new Date(offer.start_date).toLocaleDateString(
-                                "en-US",
-                                {
-                                    month: "short",
-                                    day: "numeric",
-                                },
-                            )}{" "}
-                            -{" "}
-                            {new Date(offer.end_date).toLocaleDateString(
-                                "en-US",
-                                {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                },
-                            )}
-                        </span>
-                    </div>
-
-                    {/* Price & CTA Section - Redesigned for Perfect Alignment */}
-                    <div
-                        className={`mt-auto pt-4 border-t ${
-                            isDarkMode ? "border-gray-700" : "border-gray-200"
-                        }`}
-                    >
-                        <div className="flex items-center justify-between gap-3">
-                            {/* Price Column */}
-                            <div className="flex-1">
-                                <div
-                                    className={`text-xs font-semibold uppercase tracking-wider mb-1 ${
-                                        isDarkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                    }`}
-                                >
-                                    {translations.starting_from || "From"}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-2xl font-black text-blue-600">
-                                        ${offer.discount_price || offer.price}
-                                    </span>
-                                    {offer.discount_price && (
-                                        <div className="flex flex-col">
-                                            <span
-                                                className={`text-xs line-through ${
-                                                    isDarkMode
-                                                        ? "text-gray-500"
-                                                        : "text-gray-400"
-                                                }`}
-                                            >
-                                                ${offer.price}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div
-                                    className={`text-xs ${
-                                        isDarkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                    }`}
-                                >
-                                    {translations.per_night || "per night"}
-                                </div>
-                            </div>
-
-                            {/* CTA Button */}
-                            <Link
-                                href={`/offers/${offer.id}`}
-                                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 text-sm font-bold shadow-sm hover:shadow-md group/btn"
-                                aria-label={`View ${offer.title}`}
-                            >
-                                View
-                                <ArrowRight
-                                    size={16}
-                                    className="group-hover/btn:translate-x-0.5 transition-transform"
-                                />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
-        );
-    },
-);
-
-// New Unique Destination Card Design
-const DestinationCard = React.memo(
-    ({
-        destination,
-        translations,
-        isDarkMode,
-        calculateDiscount,
-        toggleFavorite,
-        favorites,
-        loadingFavorite,
-    }) => {
-        const discount = calculateDiscount(
-            destination.price,
-            destination.discount_price,
-        );
-
-        return (
-            <motion.div
-                whileHover={{ y: -6 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className={`group rounded-2xl overflow-hidden ${
-                    isDarkMode ? "bg-gray-800" : "bg-white"
-                } shadow-md hover:shadow-xl transition-all duration-300 flex flex-col h-full`}
-            >
-                {/* Image Section */}
-                <div className="relative overflow-hidden aspect-[4/3]">
-                    <img
-                        src={
-                            destination.image ||
-                            "/images/placeholder-destination.jpg"
-                        }
-                        alt={destination.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                        onError={(e) =>
-                            (e.target.src =
-                                "/images/placeholder-destination.jpg")
-                        }
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-
-                    {/* Discount Badge - Top Right - Eye-catching */}
-                    {discount && (
-                        <div className="absolute top-0 right-0">
-                            <div className="relative">
-                                <div className="bg-gradient-to-br from-orange-500 to-red-600 text-white px-4 py-3 rounded-bl-2xl shadow-2xl">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-black leading-none">
-                                            {discount}%
-                                        </div>
-                                        <div className="text-[10px] font-bold uppercase tracking-wide">
-                                            OFF
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Category & Favorite - Bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                        {destination.category && (
-                            <span className="inline-block bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-semibold">
-                                {destination.category}
-                            </span>
-                        )}
-                        <button
-                            onClick={() =>
-                                toggleFavorite(destination.id, "destination_id")
-                            }
-                            disabled={
-                                loadingFavorite[`destination_${destination.id}`]
-                            }
-                            className={`p-2.5 rounded-xl backdrop-blur-sm transition-all ${
-                                favorites[`destination_${destination.id}`]
-                                    ?.is_favorite
-                                    ? "bg-red-500 scale-110"
-                                    : "bg-white/90 hover:bg-white"
-                            } ${
-                                loadingFavorite[`destination_${destination.id}`]
-                                    ? "opacity-50"
-                                    : ""
-                            }`}
-                            aria-label="Toggle favorite"
-                        >
-                            <Heart
-                                size={18}
-                                className={
-                                    favorites[`destination_${destination.id}`]
-                                        ?.is_favorite
-                                        ? "text-white fill-white"
-                                        : "text-gray-700"
-                                }
-                            />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="p-5 flex flex-col flex-grow">
-                    {/* Title */}
-                    <h3
-                        className={`text-xl font-bold mb-3 ${
-                            isDarkMode ? "text-white" : "text-gray-900"
-                        } line-clamp-1 group-hover:text-blue-600 transition-colors`}
-                    >
-                        {destination.title}
-                    </h3>
-
-                    {/* Location */}
-                    <div className="flex items-center gap-2 mb-3">
-                        <div
-                            className={`p-1.5 rounded-lg ${
-                                isDarkMode ? "bg-gray-700" : "bg-gray-100"
-                            }`}
-                        >
-                            <MapPin size={14} className="text-blue-600" />
-                        </div>
-                        <span
-                            className={`text-sm font-medium ${
-                                isDarkMode ? "text-gray-300" : "text-gray-600"
-                            } line-clamp-1`}
-                        >
-                            {destination.location}
-                        </span>
-                    </div>
-
-                    {/* Duration & Group Size */}
-                    <div className="flex items-center gap-3 mb-4">
-                        <div
-                            className={`flex items-center gap-1.5 text-xs ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                        >
-                            <Calendar size={13} />
-                            <span>{destination.duration || "3-7 days"}</span>
-                        </div>
-                        <div
-                            className={`w-1 h-1 rounded-full ${
-                                isDarkMode ? "bg-gray-600" : "bg-gray-300"
-                            }`}
-                        ></div>
-                        <div
-                            className={`flex items-center gap-1.5 text-xs ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                        >
-                            <Users size={13} />
-                            <span>{destination.group_size || "2-8 ppl"}</span>
-                        </div>
-                    </div>
-
-                    {/* Price & CTA Section - Redesigned for Perfect Alignment */}
-                    <div
-                        className={`mt-auto pt-4 border-t ${
-                            isDarkMode ? "border-gray-700" : "border-gray-200"
-                        }`}
-                    >
-                        <div className="flex items-center justify-between gap-3">
-                            {/* Price Column */}
-                            <div className="flex-1">
-                                <div
-                                    className={`text-xs font-semibold uppercase tracking-wider mb-1 ${
-                                        isDarkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                    }`}
-                                >
-                                    {translations.starting_from || "From"}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-2xl font-black text-blue-600">
-                                        $
-                                        {destination.discount_price ||
-                                            destination.price}
-                                    </span>
-                                    {destination.discount_price && (
-                                        <div className="flex flex-col">
-                                            <span
-                                                className={`text-xs line-through ${
-                                                    isDarkMode
-                                                        ? "text-gray-500"
-                                                        : "text-gray-400"
-                                                }`}
-                                            >
-                                                ${destination.price}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div
-                                    className={`text-xs ${
-                                        isDarkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                    }`}
-                                >
-                                    {translations.per_night || "per night"}
-                                </div>
-                            </div>
-
-                            {/* CTA Button */}
-                            <Link
-                                href={`/destinations/${destination.id}`}
-                                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 text-sm font-bold shadow-sm hover:shadow-md group/btn"
-                                aria-label={`View ${destination.title}`}
-                            >
-                                View
-                                <ArrowRight
-                                    size={16}
-                                    className="group-hover/btn:translate-x-0.5 transition-transform"
-                                />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
-        );
-    },
-);
-
-// Pagination Component
-const Pagination = ({ currentPage, totalPages, onPageChange, isDarkMode }) => {
-    const pages = [...Array(totalPages).keys()].map((i) => i + 1);
-    const pageRange = 2;
-    const startPage = Math.max(1, currentPage - pageRange);
-    const endPage = Math.min(totalPages, currentPage + pageRange);
+const FeatureCard = ({ item, isDarkMode }) => {
+    const Icon = item.icon;
 
     return (
-        <div className="flex items-center justify-center gap-2 mt-10">
-            <button
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`p-2.5 rounded-xl ${
-                    isDarkMode
-                        ? "bg-gray-800 text-white hover:bg-gray-700"
-                        : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                } disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm`}
-                aria-label="Previous page"
+        <motion.div
+            whileHover={{ y: -6 }}
+            transition={{ duration: 0.25 }}
+            className={`rounded-3xl p-6 h-full border transition-all duration-300 ${
+                isDarkMode
+                    ? "bg-gray-800/90 border-gray-700 hover:border-gray-600"
+                    : "bg-white border-gray-200 hover:border-blue-200"
+            } shadow-sm hover:shadow-xl`}
+        >
+            <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4">
+                <Icon size={26} className="text-blue-600" />
+            </div>
+
+            <h3
+                className={`text-xl font-bold mb-3 ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                }`}
             >
-                <ArrowLeft size={18} />
-            </button>
-            {pages
-                .filter((page) => page >= startPage && page <= endPage)
-                .map((page) => (
-                    <button
-                        key={page}
-                        onClick={() => onPageChange(page)}
-                        className={`min-w-[40px] px-4 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm ${
-                            currentPage === page
-                                ? "bg-blue-600 text-white"
-                                : isDarkMode
-                                  ? "bg-gray-800 text-white hover:bg-gray-700"
-                                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                        }`}
-                        aria-label={`Page ${page}`}
-                    >
-                        {page}
-                    </button>
-                ))}
-            <button
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`p-2.5 rounded-xl ${
-                    isDarkMode
-                        ? "bg-gray-800 text-white hover:bg-gray-700"
-                        : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                } disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm`}
-                aria-label="Next page"
+                {item.title}
+            </h3>
+
+            <p
+                className={`text-sm leading-7 ${
+                    isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
             >
-                <ChevronRight size={18} />
-            </button>
-        </div>
+                {item.description}
+            </p>
+        </motion.div>
     );
 };
 
-const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
+const ToolCard = ({ item, isDarkMode, onPrimaryAction }) => {
+    const Icon = item.icon;
+
+    return (
+        <motion.div
+            whileHover={{ y: -5 }}
+            transition={{ duration: 0.25 }}
+            className={`rounded-3xl p-6 border h-full flex flex-col ${
+                isDarkMode
+                    ? "bg-gray-800/90 border-gray-700"
+                    : "bg-white border-gray-200"
+            } shadow-sm hover:shadow-xl`}
+        >
+            <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center">
+                    <Icon size={24} className="text-blue-600" />
+                </div>
+                <span
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+                        isDarkMode
+                            ? "bg-gray-700 text-gray-300"
+                            : "bg-blue-50 text-blue-700"
+                    }`}
+                >
+                    {item.badge}
+                </span>
+            </div>
+
+            <h3
+                className={`text-xl font-bold mb-3 ${
+                    isDarkMode ? "text-white" : "text-gray-900"
+                }`}
+            >
+                {item.title}
+            </h3>
+
+            <p
+                className={`text-sm leading-7 flex-grow ${
+                    isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+            >
+                {item.description}
+            </p>
+
+            <button
+                type="button"
+                onClick={onPrimaryAction}
+                className="mt-6 inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            >
+                {item.cta}
+                <ArrowRight size={16} />
+            </button>
+        </motion.div>
+    );
+};
+
+const HomePage = ({ auth }) => {
     const { props } = usePage();
     const {
         heroSections = [],
         flash = {},
-        offers = [],
-        destinations = [],
-        packages = [],
         translations = {},
     } = props;
-    const user = auth?.user || null;
-    const successMessage = flash?.success || null;
+
+    const sharedAuth = props.auth || auth || {};
+    const user = sharedAuth?.user || null;
+
+    const toolsRef = useRef(null);
     const searchRef = useRef(null);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
+        if (typeof window === "undefined") return false;
         const savedMode = localStorage.getItem("darkMode");
-        if (savedMode !== null) {
-            return savedMode === "true";
-        }
+        if (savedMode !== null) return savedMode === "true";
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
     });
+
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isTooltipVisible, setIsTooltipVisible] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [suggestions, setSuggestions] = useState([]);
-    const [offerPage, setOfferPage] = useState(1);
-    const [destinationPage, setDestinationPage] = useState(1);
-    const [favorites, setFavorites] = useState(() => {
-        const initial = {};
-        initialFavorites.forEach((fav) => {
-            const type = fav.favoritable_type.toLowerCase();
-            const id = fav.favoritable_id;
-            initial[`${type}_${id}`] = {
-                is_favorite: true,
-                favorite_id: fav.id,
-            };
-        });
-        offers.forEach((offer) => {
-            if (!initial[`offer_${offer.id}`]) {
-                initial[`offer_${offer.id}`] = {
-                    is_favorite: offer.is_favorite || false,
-                    favorite_id: offer.favorite_id || null,
-                };
-            }
-        });
-        destinations.forEach((destination) => {
-            if (!initial[`destination_${destination.id}`]) {
-                initial[`destination_${destination.id}`] = {
-                    is_favorite: destination.is_favorite || false,
-                    favorite_id: destination.favorite_id || null,
-                };
-            }
-        });
-        return initial;
-    });
-    const [loadingFavorite, setLoadingFavorite] = useState({});
-    const itemsPerPage = 4;
 
     useEffect(() => {
-        localStorage.setItem("darkMode", isDarkMode);
+        localStorage.setItem("darkMode", isDarkMode ? "true" : "false");
         document.documentElement.classList.toggle("dark", isDarkMode);
     }, [isDarkMode]);
 
     useEffect(() => {
-        if (flash.success) {
-            toast.success(flash.success);
-        }
-        if (flash.error) {
-            toast.error(flash.error);
-        }
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
     }, [flash]);
-
-    const toggleChat = useCallback(() => setIsChatOpen((prev) => !prev), []);
-    const handleCloseTooltip = useCallback(
-        () => setIsTooltipVisible(false),
-        [],
-    );
-    const toggleDarkMode = useCallback(
-        () => setIsDarkMode((prev) => !prev),
-        [],
-    );
-
-    const scrollToSearch = useCallback(() => {
-        searchRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsTooltipVisible(false), 4000);
@@ -621,182 +171,170 @@ const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
             const timer = setInterval(() => {
                 setCurrentSlide((prev) => (prev + 1) % heroSections.length);
             }, 5000);
+
             return () => clearInterval(timer);
         }
     }, [heroSections]);
 
-    const toggleFavorite = useCallback(
-        async (itemId, itemType) => {
-            if (!user) {
-                toast.error("Please log in to add to favorites");
-                return { success: false };
-            }
+    const toggleChat = useCallback(() => {
+        setIsChatOpen((prev) => !prev);
+    }, []);
 
-            const key = `${itemType.split("_")[0]}_${itemId}`;
-            const prevState = { ...favorites[key] } || {
-                is_favorite: false,
-                favorite_id: null,
-            };
+    const toggleDarkMode = useCallback(() => {
+        setIsDarkMode((prev) => !prev);
+    }, []);
 
-            setFavorites((prev) => ({
-                ...prev,
-                [key]: {
-                    is_favorite: !prevState.is_favorite,
-                    favorite_id: prevState.is_favorite ? null : "temp",
-                },
-            }));
-            setLoadingFavorite((prev) => ({ ...prev, [key]: true }));
+    const scrollToTools = useCallback(() => {
+        toolsRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, []);
 
-            try {
-                const response = await axios.post("/favorites", {
-                    [itemType]: itemId,
-                });
+    const scrollToSearch = useCallback(() => {
+        searchRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, []);
 
-                const { success, message, is_favorite, favorite_id } =
-                    response.data;
-
-                if (success) {
-                    setFavorites((prev) => ({
-                        ...prev,
-                        [key]: { is_favorite, favorite_id },
-                    }));
-                    toast.success(message);
-                    return { success: true };
-                } else {
-                    toast.error(message);
-                    setFavorites((prev) => ({ ...prev, [key]: prevState }));
-                    return { success: false };
-                }
-            } catch (error) {
-                const errorMessage =
-                    error.response?.data?.message ||
-                    "Failed to toggle favorite";
-                toast.error(errorMessage);
-                setFavorites((prev) => ({ ...prev, [key]: prevState }));
-                return { success: false };
-            } finally {
-                setLoadingFavorite((prev) => ({ ...prev, [key]: false }));
-            }
-        },
-        [user, favorites],
+    const supportTopics = useMemo(
+        () => [
+            {
+                title: "Managing Anxiety",
+                category: "anxiety",
+                description:
+                    "Gentle support paths for worry, racing thoughts, and emotional overload.",
+                href: "#",
+            },
+            {
+                title: "Better Sleep Habits",
+                category: "sleep",
+                description:
+                    "Daily routines and calming practices to improve rest and nighttime balance.",
+                href: "#",
+            },
+            {
+                title: "Stress Reset",
+                category: "stress",
+                description:
+                    "Short, practical techniques to reduce tension and regain steadiness.",
+                href: "#",
+            },
+            {
+                title: "Focus and Clarity",
+                category: "focus",
+                description:
+                    "Simple exercises to organize thoughts and reduce mental distraction.",
+                href: "#",
+            },
+            {
+                title: "Mood Check-ins",
+                category: "mood",
+                description:
+                    "Structured emotional reflection to help you better understand your state.",
+                href: "#",
+            },
+            {
+                title: "Guided Journaling",
+                category: "journaling",
+                description:
+                    "Prompts that help you express feelings safely and meaningfully.",
+                href: "#",
+            },
+        ],
+        [],
     );
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            const lowerQuery = searchQuery.toLowerCase();
-            const allItems = [
-                ...destinations.map((d) => ({
-                    ...d,
-                    type: "destination",
-                    name: d.title,
-                    location: d.location,
-                    destination_name: d.title,
-                })),
-                ...offers.map((o) => ({
-                    ...o,
-                    type: "offer",
-                    name: o.title,
-                    location: o.destination_location,
-                    destination_name: o.destination_title,
-                })),
-                ...packages.map((p) => ({
-                    ...p,
-                    type: "package",
-                    name: p.title,
-                    location: p.destination_location,
-                    destination_name: p.destination_title,
-                })),
-            ];
-            const filtered = allItems
-                .filter((item) => {
-                    const matchesQuery =
-                        (item.name?.toLowerCase().includes(lowerQuery) ||
-                            item.title?.toLowerCase().includes(lowerQuery) ||
-                            item.description
-                                ?.toLowerCase()
-                                .includes(lowerQuery) ||
-                            item.location?.toLowerCase().includes(lowerQuery) ||
-                            item.destination_name
-                                ?.toLowerCase()
-                                .includes(lowerQuery)) &&
-                        (selectedCategory === "all" ||
-                            item.category?.toLowerCase() ===
-                                selectedCategory.toLowerCase());
-                    return matchesQuery;
-                })
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 3);
-            setSuggestions(filtered);
-        }, 300);
+    const filteredTopics = useMemo(() => {
+        if (!searchQuery.trim()) return supportTopics;
 
-        return () => clearTimeout(handler);
-    }, [searchQuery, selectedCategory, destinations, offers, packages]);
+        const q = searchQuery.toLowerCase().trim();
 
-    const calculateDiscount = useCallback((original, discounted) => {
-        if (
-            !discounted ||
-            original <= discounted ||
-            isNaN(original) ||
-            isNaN(discounted)
-        )
-            return null;
-        return Math.round(((original - discounted) / original) * 100);
-    }, []);
+        return supportTopics.filter(
+            (item) =>
+                item.title.toLowerCase().includes(q) ||
+                item.category.toLowerCase().includes(q) ||
+                item.description.toLowerCase().includes(q),
+        );
+    }, [searchQuery, supportTopics]);
 
-    const handleSurpriseMe = useCallback(() => {
-        const allItems = [
-            ...destinations.map((d) => ({
-                ...d,
-                type: "destination",
-                name: d.title,
-                location: d.location,
-                destination_name: d.title,
-            })),
-            ...offers.map((o) => ({
-                ...o,
-                type: "offer",
-                name: o.title,
-                location: o.destination_location,
-                destination_name: o.destination_title,
-            })),
-            ...packages.map((p) => ({
-                ...p,
-                type: "package",
-                name: p.title,
-                location: p.destination_location,
-                destination_name: p.destination_title,
-            })),
-        ];
-        const shuffled = allItems.sort(() => Math.random() - 0.5);
-        setSuggestions(shuffled.slice(0, 3));
-    }, [destinations, offers, packages]);
+    const featureCards = [
+        {
+            icon: Brain,
+            title: "Personalized mental wellness journey",
+            description:
+                "Mind Gate helps each user begin from their current emotional state and move through a guided, supportive experience.",
+        },
+        {
+            icon: MessageCircle,
+            title: "AI companion with a calm tone",
+            description:
+                "A supportive AI assistant can help users explore feelings, reflect, and discover useful next steps in a safe way.",
+        },
+        {
+            icon: ShieldCheck,
+            title: "Private, respectful, and user-centered",
+            description:
+                "The platform is designed to feel safe, non-judgmental, and focused on trust from the very first interaction.",
+        },
+    ];
 
-    const clearSearch = useCallback(() => {
-        setSearchQuery("");
-        setSuggestions([]);
-    }, []);
+    const platformTools = [
+        {
+            icon: Activity,
+            badge: "Daily",
+            title: "Mood tracking",
+            description:
+                "Check in with your emotional state regularly and build a clearer understanding of how you are feeling over time.",
+            cta: "Start a check-in",
+        },
+        {
+            icon: NotebookPen,
+            badge: "Reflect",
+            title: "Guided journaling",
+            description:
+                "Use simple writing prompts to process thoughts, reduce overwhelm, and create more emotional clarity.",
+            cta: "Open journaling prompts",
+        },
+        {
+            icon: HeartHandshake,
+            badge: "Support",
+            title: "Calming exercises",
+            description:
+                "Access breathing routines, grounding practices, and short supportive exercises for stressful moments.",
+            cta: "Explore exercises",
+        },
+        {
+            icon: BookOpenText,
+            badge: "Learn",
+            title: "Wellness resources",
+            description:
+                "Read practical mental wellness content designed in a clear, approachable, and supportive way.",
+            cta: "Browse resources",
+        },
+    ];
 
-    const paginatedOffers = useMemo(() => {
-        const start = (offerPage - 1) * itemsPerPage;
-        return offers.slice(start, start + itemsPerPage);
-    }, [offers, offerPage]);
+    const steps = [
+        {
+            number: "01",
+            title: "Begin with your current state",
+            description:
+                "Users start by understanding and expressing how they feel right now.",
+        },
+        {
+            number: "02",
+            title: "Receive guided support",
+            description:
+                "Mind Gate recommends calm, useful next steps based on needs and goals.",
+        },
+        {
+            number: "03",
+            title: "Build healthier habits over time",
+            description:
+                "Small, repeated actions help users develop more stability and emotional balance.",
+        },
+    ];
 
-    const paginatedDestinations = useMemo(() => {
-        const start = (destinationPage - 1) * itemsPerPage;
-        return destinations.slice(start, start + itemsPerPage);
-    }, [destinations, destinationPage]);
-
-    const totalOfferPages = Math.ceil(offers.length / itemsPerPage);
-    const totalDestinationPages = Math.ceil(destinations.length / itemsPerPage);
-
-    const categories = [
-        { name: "All", icon: Compass },
-        { name: "Beach", icon: Umbrella },
-        { name: "Adventure", icon: MapPin },
-        { name: "Cultural", icon: Building },
-        { name: "Historical", icon: Clock },
-        { name: "Wildlife", icon: Globe2 },
-        { name: "Mountain", icon: Mountain },
+    const trustPoints = [
+        "Structured onboarding that feels calm and clear",
+        "Supportive tone instead of pressure or judgment",
+        "Useful daily tools that are easy to return to",
+        "Modern, responsive interface for all screen sizes",
     ];
 
     return (
@@ -806,39 +344,26 @@ const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
                     ? "dark bg-gray-900 text-white"
                     : "bg-gray-50 text-gray-900"
             }`}
-            data-dark-mode={isDarkMode}
         >
             <Head>
-                <title>Mind Gate - Your Adventure Awaits</title>
+                <title>Mind Gate - Mental Wellness Platform</title>
                 <meta
                     name="description"
-                    content="Discover unforgettable Minds, explore stunning destinations, and book the best travel deals with Mind Gate."
+                    content="Mind Gate is a modern mental wellness platform that offers guided support, emotional reflection tools, and a calm AI companion."
                 />
             </Head>
+
             <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+
             <Navbar
                 user={user}
                 isDarkMode={isDarkMode}
                 toggleDarkMode={toggleDarkMode}
             />
 
-            {/* Hero Section */}
-            <section className="relative h-screen w-full overflow-hidden">
-                {heroSections.length === 0 ? (
-                    <div
-                        className={`absolute inset-0 flex items-center justify-center ${
-                            isDarkMode ? "bg-gray-900" : "bg-gray-100"
-                        }`}
-                    >
-                        <p
-                            className={`text-xl ${
-                                isDarkMode ? "text-gray-300" : "text-gray-600"
-                            }`}
-                        >
-                            No hero sections available.
-                        </p>
-                    </div>
-                ) : (
+            {/* Hero */}
+            <section className="relative min-h-screen w-full overflow-hidden">
+                {heroSections.length > 0 ? (
                     <>
                         <div className="absolute inset-0">
                             <AnimatePresence initial={false} mode="wait">
@@ -847,10 +372,10 @@ const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.5 }}
+                                    transition={{ duration: 0.6 }}
                                     className="absolute inset-0"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/40 to-black/70" />
                                     <img
                                         src={
                                             heroSections[currentSlide]?.image ||
@@ -858,502 +383,685 @@ const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
                                         }
                                         alt={
                                             heroSections[currentSlide]?.title ||
-                                            "Hero Image"
+                                            "Mind Gate Hero"
                                         }
                                         className="w-full h-full object-cover"
                                         loading="lazy"
-                                        onError={(e) =>
-                                            (e.target.src =
-                                                "/images/placeholder-hero.jpg")
-                                        }
+                                        onError={(e) => {
+                                            e.target.src =
+                                                "/images/placeholder-hero.jpg";
+                                        }}
                                     />
                                 </motion.div>
                             </AnimatePresence>
                         </div>
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-                            <motion.div
-                                key={`content-${currentSlide}`}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
-                                className="max-w-4xl"
-                            >
-                                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
-                                    {heroSections[currentSlide]?.title ||
-                                        "Welcome to Mind Gate"}
-                                </h1>
-                                <p className="text-xl md:text-2xl text-white/90 mb-8">
-                                    {heroSections[currentSlide]?.subtitle ||
-                                        "Plan your next adventure with us."}
-                                </p>
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                    <Link
-                                        href="/booking"
-                                        className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg"
-                                        aria-label="Start planning"
+                        <div className="relative z-10 min-h-screen flex items-center">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                                <div className="max-w-4xl">
+                                    <motion.h1
+                                        key={`title-${currentSlide}`}
+                                        initial={{ opacity: 0, y: 24 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5 }}
+                                        className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight"
                                     >
-                                        {heroSections[currentSlide]?.cta_text ||
-                                            "Start Planning"}
-                                    </Link>
+                                        {heroSections[currentSlide]?.title ||
+                                            translations.hero_section_title ||
+                                            "Mind Gate"}
+                                    </motion.h1>
+
+                                    <motion.p
+                                        key={`subtitle-${currentSlide}`}
+                                        initial={{ opacity: 0, y: 24 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{
+                                            duration: 0.5,
+                                            delay: 0.1,
+                                        }}
+                                        className="mt-6 text-lg sm:text-xl lg:text-2xl text-white/90 leading-8 max-w-3xl"
+                                    >
+                                        {heroSections[currentSlide]?.subtitle ||
+                                            translations.journey_planner_subtitle ||
+                                            "A calm digital space for guided support, emotional awareness, and healthier daily habits."}
+                                    </motion.p>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 24 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{
+                                            duration: 0.5,
+                                            delay: 0.2,
+                                        }}
+                                        className="mt-10 flex flex-col sm:flex-row gap-4"
+                                    >
+                                        <Link
+                                            href={user ? "/home" : "/register"}
+                                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold text-base shadow-xl"
+                                        >
+                                            {user
+                                                ? "Go to your space"
+                                                : "Start your journey"}
+                                            <ArrowRight size={18} />
+                                        </Link>
+
+                                        <button
+                                            type="button"
+                                            onClick={scrollToTools}
+                                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 border border-white/30 backdrop-blur-sm text-white hover:bg-white/20 transition-colors font-bold text-base"
+                                        >
+                                            Explore platform tools
+                                        </button>
+                                    </motion.div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {heroSections.length > 1 && (
+                            <>
+                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-between px-4 md:px-8">
                                     <button
-                                        onClick={scrollToSearch}
-                                        className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl hover:bg-white/20 transition-colors font-semibold text-lg border border-white/30"
-                                        aria-label="Explore"
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentSlide((prev) =>
+                                                prev === 0
+                                                    ? heroSections.length - 1
+                                                    : prev - 1,
+                                            )
+                                        }
+                                        className="p-3 rounded-2xl bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-colors"
+                                        aria-label="Previous slide"
                                     >
-                                        Explore Destinations
+                                        <ArrowLeft size={22} />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentSlide((prev) =>
+                                                prev === heroSections.length - 1
+                                                    ? 0
+                                                    : prev + 1,
+                                            )
+                                        }
+                                        className="p-3 rounded-2xl bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-colors"
+                                        aria-label="Next slide"
+                                    >
+                                        <ArrowRight size={22} />
                                     </button>
                                 </div>
-                            </motion.div>
-                        </div>
 
-                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 md:px-8">
-                            <button
-                                onClick={() =>
-                                    setCurrentSlide((prev) =>
-                                        prev === 0
-                                            ? heroSections.length - 1
-                                            : prev - 1,
-                                    )
-                                }
-                                className="p-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition-colors"
-                                aria-label="Previous"
-                            >
-                                <ArrowLeft size={24} />
-                            </button>
-                            <button
-                                onClick={() =>
-                                    setCurrentSlide((prev) =>
-                                        prev === heroSections.length - 1
-                                            ? 0
-                                            : prev + 1,
-                                    )
-                                }
-                                className="p-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition-colors"
-                                aria-label="Next"
-                            >
-                                <ArrowRight size={24} />
-                            </button>
-                        </div>
-
-                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2">
-                            {heroSections.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentSlide(index)}
-                                    className={`h-2 rounded-full transition-all ${
-                                        currentSlide === index
-                                            ? "w-8 bg-white"
-                                            : "w-2 bg-white/50"
-                                    }`}
-                                    aria-label={`Slide ${index + 1}`}
-                                />
-                            ))}
-                        </div>
+                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                    {heroSections.map((_, index) => (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() =>
+                                                setCurrentSlide(index)
+                                            }
+                                            className={`h-2 rounded-full transition-all ${
+                                                currentSlide === index
+                                                    ? "w-8 bg-white"
+                                                    : "w-2 bg-white/50"
+                                            }`}
+                                            aria-label={`Slide ${index + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </>
+                ) : (
+                    <div className="min-h-screen flex items-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950" />
+                        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_#60a5fa,_transparent_30%),radial-gradient(circle_at_bottom_left,_#38bdf8,_transparent_25%)]" />
+
+                        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                            <div className="max-w-4xl">
+                                <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight">
+                                    {translations.hero_section_title ||
+                                        "Mind Gate"}
+                                </h1>
+                                <p className="mt-6 text-lg sm:text-xl lg:text-2xl text-white/85 leading-8 max-w-3xl">
+                                    {translations.journey_planner_subtitle ||
+                                        "A supportive digital platform for emotional awareness, guided reflection, and healthier daily habits."}
+                                </p>
+
+                                <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                                    <Link
+                                        href={user ? "/home" : "/register"}
+                                        className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold text-base shadow-xl"
+                                    >
+                                        {user
+                                            ? "Go to your space"
+                                            : "Start your journey"}
+                                        <ArrowRight size={18} />
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        onClick={scrollToSearch}
+                                        className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors font-bold text-base"
+                                    >
+                                        Explore support topics
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </section>
 
-            {/* Search Section */}
+            {/* Quick intro strip */}
             <section
-                className={`py-20 ${isDarkMode ? "bg-gray-900" : "bg-white"}`}
+                className={`py-8 border-y ${
+                    isDarkMode
+                        ? "bg-gray-900 border-gray-800"
+                        : "bg-white border-gray-200"
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                        {
+                            icon: ShieldCheck,
+                            title: "Safe experience",
+                            text: "Designed to feel calm, private, and respectful.",
+                        },
+                        {
+                            icon: Sparkles,
+                            title: "Guided support",
+                            text: "Clear next steps instead of overwhelming choices.",
+                        },
+                        {
+                            icon: Users,
+                            title: "Built for real users",
+                            text: "Responsive, modern, and easy to use on all screens.",
+                        },
+                    ].map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                            <div
+                                key={index}
+                                className={`rounded-2xl p-5 ${
+                                    isDarkMode
+                                        ? "bg-gray-800/70"
+                                        : "bg-gray-50"
+                                }`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-blue-600/10 flex items-center justify-center">
+                                        <Icon
+                                            size={20}
+                                            className="text-blue-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <h3
+                                            className={`font-bold mb-1 ${
+                                                isDarkMode
+                                                    ? "text-white"
+                                                    : "text-gray-900"
+                                            }`}
+                                        >
+                                            {item.title}
+                                        </h3>
+                                        <p
+                                            className={`text-sm leading-6 ${
+                                                isDarkMode
+                                                    ? "text-gray-300"
+                                                    : "text-gray-600"
+                                            }`}
+                                        >
+                                            {item.text}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* Search topics */}
+            <section
                 ref={searchRef}
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
+                }`}
             >
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                         <h2
-                            className={`text-4xl md:text-5xl font-bold mb-4 ${
+                            className={`text-3xl md:text-5xl font-black mb-4 ${
                                 isDarkMode ? "text-white" : "text-gray-900"
                             }`}
                         >
-                            Find Your Perfect Adventure
+                            Explore support topics
                         </h2>
                         <p
                             className={`text-lg ${
                                 isDarkMode ? "text-gray-400" : "text-gray-600"
                             }`}
                         >
-                            Search destinations, offers, and packages
+                            Search for areas like stress, sleep, mood, anxiety,
+                            focus, or journaling.
                         </p>
                     </div>
 
-                    <div className="relative mb-10">
-                        <div className="relative">
-                            <Search
-                                className={`absolute left-5 top-1/2 transform -translate-y-1/2 ${
+                    <div className="max-w-3xl mx-auto relative mb-10">
+                        <Search
+                            className={`absolute left-5 top-1/2 -translate-y-1/2 ${
+                                isDarkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                            size={22}
+                        />
+
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={
+                                translations.search_placeholder ||
+                                "Search support topics..."
+                            }
+                            className={`w-full pl-14 pr-14 py-5 border-2 rounded-2xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                                isDarkMode
+                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                            }`}
+                        />
+
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className={`absolute right-5 top-1/2 -translate-y-1/2 ${
                                     isDarkMode
-                                        ? "text-gray-400"
-                                        : "text-gray-500"
+                                        ? "text-gray-400 hover:text-white"
+                                        : "text-gray-500 hover:text-gray-900"
                                 }`}
-                                size={22}
-                            />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Where would you like to go?"
-                                className={`w-full pl-14 pr-14 py-5 ${
-                                    isDarkMode
-                                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                                } border-2 rounded-2xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm`}
-                                aria-label="Search"
-                            />
-                            {searchQuery && (
-                                <button
-                                    onClick={clearSearch}
-                                    className={`absolute right-5 top-1/2 transform -translate-y-1/2 ${
-                                        isDarkMode
-                                            ? "text-gray-400 hover:text-white"
-                                            : "text-gray-500 hover:text-gray-900"
-                                    }`}
-                                    aria-label="Clear"
-                                >
-                                    <X size={20} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap justify-center gap-3 mb-10">
-                        {categories.map((category) => {
-                            const Icon = category.icon;
-                            const isActive =
-                                selectedCategory ===
-                                category.name.toLowerCase();
-                            return (
-                                <button
-                                    key={category.name}
-                                    onClick={() =>
-                                        setSelectedCategory(
-                                            category.name.toLowerCase(),
-                                        )
-                                    }
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                                        isActive
-                                            ? "bg-blue-600 text-white shadow-md"
-                                            : isDarkMode
-                                              ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                              : "bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200"
-                                    }`}
-                                >
-                                    <Icon size={16} />
-                                    {category.name}
-                                </button>
-                            );
-                        })}
-                        <button
-                            onClick={handleSurpriseMe}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all shadow-md"
-                        >
-                            <Sparkles size={16} />
-                            Surprise Me
-                        </button>
-                    </div>
-
-                    <AnimatePresence>
-                        {suggestions.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="grid grid-cols-1 md:grid-cols-3 gap-5"
                             >
-                                {suggestions.map((item) => (
-                                    <Link
-                                        key={`${item.type}-${item.id}`}
-                                        href={
-                                            item.type === "destination"
-                                                ? `/destinations/${item.id}`
-                                                : item.type === "offer"
-                                                  ? `/offers/${item.id}`
-                                                  : `/packages/${item.id}`
-                                        }
-                                        className={`flex items-center gap-4 p-4 rounded-xl ${
-                                            isDarkMode
-                                                ? "bg-gray-800 hover:bg-gray-750"
-                                                : "bg-white hover:bg-gray-50 border-2 border-gray-200"
-                                        } transition-all shadow-sm hover:shadow-md`}
-                                    >
-                                        <img
-                                            src={
-                                                item.image ||
-                                                "/images/placeholder-small.jpg"
-                                            }
-                                            alt={item.name || item.title}
-                                            className="w-20 h-20 rounded-xl object-cover"
-                                            loading="lazy"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <h3
-                                                className={`font-bold mb-1 line-clamp-1 ${
-                                                    isDarkMode
-                                                        ? "text-white"
-                                                        : "text-gray-900"
-                                                }`}
-                                            >
-                                                {item.name || item.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 line-clamp-1 mb-2">
-                                                {item.location ||
-                                                    item.destination_name}
-                                            </p>
-                                            <p className="text-base font-bold text-blue-600">
-                                                $
-                                                {item.discount_price ||
-                                                    item.price}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </motion.div>
+                                <X size={20} />
+                            </button>
                         )}
-                    </AnimatePresence>
-                </div>
-            </section>
-
-            {/* Offers Section */}
-            <section
-                className={`py-20 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-end justify-between mb-10">
-                        <div>
-                            <h2
-                                className={`text-3xl md:text-4xl font-bold mb-2 ${
-                                    isDarkMode ? "text-white" : "text-gray-900"
-                                }`}
-                            >
-                                ExcGateive Offers
-                            </h2>
-                            <p
-                                className={`text-base ${
-                                    isDarkMode
-                                        ? "text-gray-400"
-                                        : "text-gray-600"
-                                }`}
-                            >
-                                Limited-time deals with incredible savings
-                            </p>
-                        </div>
-                        <Link
-                            href="/offers"
-                            className="hidden sm:flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-sm"
-                        >
-                            View All
-                            <ArrowRight size={18} />
-                        </Link>
                     </div>
 
-                    {paginatedOffers.length === 0 ? (
-                        <div
-                            className={`text-center py-16 ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                        >
-                            <Tag
-                                size={56}
-                                className="mx-auto mb-4 opacity-40"
-                            />
-                            <p className="text-lg">
-                                No offers available at the moment.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {paginatedOffers.map((offer) => (
-                                <OfferCard
-                                    key={offer.id}
-                                    offer={offer}
-                                    translations={translations}
-                                    isDarkMode={isDarkMode}
-                                    calculateDiscount={calculateDiscount}
-                                    toggleFavorite={toggleFavorite}
-                                    favorites={favorites}
-                                    loadingFavorite={loadingFavorite}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {totalOfferPages > 1 && (
-                        <Pagination
-                            currentPage={offerPage}
-                            totalPages={totalOfferPages}
-                            onPageChange={setOfferPage}
-                            isDarkMode={isDarkMode}
-                        />
-                    )}
-
-                    <div className="text-center mt-8 sm:hidden">
-                        <Link
-                            href="/offers"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
-                        >
-                            View All Offers
-                            <ArrowRight size={18} />
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* Destinations Section */}
-            <section
-                className={`py-20 ${isDarkMode ? "bg-gray-900" : "bg-white"}`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2
-                            className={`text-3xl md:text-4xl font-bold mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Trending Destinations
-                        </h2>
-                        <p
-                            className={`text-lg ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            Explore the word's most breathtaking places
-                        </p>
-                    </div>
-
-                    {paginatedDestinations.length === 0 ? (
-                        <div
-                            className={`text-center py-16 ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                        >
-                            <Compass
-                                size={56}
-                                className="mx-auto mb-4 opacity-40"
-                            />
-                            <p className="text-lg">
-                                No destinations available.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {paginatedDestinations.map((destination) => (
-                                <DestinationCard
-                                    key={destination.id}
-                                    destination={destination}
-                                    translations={translations}
-                                    isDarkMode={isDarkMode}
-                                    calculateDiscount={calculateDiscount}
-                                    toggleFavorite={toggleFavorite}
-                                    favorites={favorites}
-                                    loadingFavorite={loadingFavorite}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {totalDestinationPages > 1 && (
-                        <Pagination
-                            currentPage={destinationPage}
-                            totalPages={totalDestinationPages}
-                            onPageChange={setDestinationPage}
-                            isDarkMode={isDarkMode}
-                        />
-                    )}
-
-                    <div className="text-center mt-12">
-                        <Link
-                            href="/destinations"
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-bold text-lg shadow-md"
-                        >
-                            Explore All Destinations
-                            <ArrowRight size={20} />
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* Benefits Section */}
-            <section
-                className={`py-20 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"}`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2
-                            className={`text-3xl md:text-4xl font-bold mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Why Choose Mind Gate
-                        </h2>
-                        <p
-                            className={`text-lg ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            Travel with confidence and peace of mind
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            {
-                                icon: Tag,
-                                title: "Best Price Guarantee",
-                                description:
-                                    "We guarantee the best prices with our price match protection.",
-                            },
-                            {
-                                icon: Shield,
-                                title: "Secure Booking",
-                                description:
-                                    "Your payments are protected with bank-level encryption.",
-                            },
-                            {
-                                icon: Award,
-                                title: "Premium Service",
-                                description:
-                                    "24/7 support team ready to assist you anytime.",
-                            },
-                            {
-                                icon: Star,
-                                title: "Loyalty Rewards",
-                                description:
-                                    "Earn points with every booking and unlock excGateive benefits.",
-                            },
-                        ].map((benefit, index) => (
-                            <div
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {filteredTopics.map((topic, index) => (
+                            <motion.div
                                 key={index}
-                                className={`p-6 rounded-2xl ${
+                                whileHover={{ y: -4 }}
+                                className={`rounded-3xl p-6 border ${
                                     isDarkMode
-                                        ? "bg-gray-800"
-                                        : "bg-white border-2 border-gray-200"
-                                } shadow-sm hover:shadow-md transition-shadow`}
+                                        ? "bg-gray-800 border-gray-700"
+                                        : "bg-white border-gray-200"
+                                } shadow-sm hover:shadow-lg transition-all`}
                             >
-                                <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                                    <benefit.icon
-                                        size={28}
-                                        className="text-blue-600"
-                                    />
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-600/10 text-blue-600">
+                                        {topic.category}
+                                    </span>
                                 </div>
+
                                 <h3
-                                    className={`text-lg font-bold mb-2 ${
+                                    className={`text-xl font-bold mb-3 ${
                                         isDarkMode
                                             ? "text-white"
                                             : "text-gray-900"
                                     }`}
                                 >
-                                    {benefit.title}
+                                    {topic.title}
                                 </h3>
+
                                 <p
-                                    className={`text-sm leading-relaxed ${
+                                    className={`text-sm leading-7 ${
                                         isDarkMode
-                                            ? "text-gray-400"
+                                            ? "text-gray-300"
                                             : "text-gray-600"
                                     }`}
                                 >
-                                    {benefit.description}
+                                    {topic.description}
                                 </p>
-                            </div>
+
+                                <button
+                                    type="button"
+                                    onClick={toggleChat}
+                                    className="mt-5 inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                                >
+                                    Ask the AI assistant
+                                    <ArrowRight size={16} />
+                                </button>
+                            </motion.div>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Core value section */}
+            <section
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-950" : "bg-white"
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-3xl mb-12">
+                        <h2
+                            className={`text-3xl md:text-5xl font-black mb-4 ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                            }`}
+                        >
+                            A home page that matches the Mind Gate idea
+                        </h2>
+                        <p
+                            className={`text-lg leading-8 ${
+                                isDarkMode ? "text-gray-400" : "text-gray-600"
+                            }`}
+                        >
+                            Instead of travel deals and destinations, the page
+                            now introduces the platform as a modern mental
+                            wellness experience focused on support, clarity, and
+                            meaningful daily use.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {featureCards.map((item, index) => (
+                            <FeatureCard
+                                key={index}
+                                item={item}
+                                isDarkMode={isDarkMode}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Platform tools */}
+            <section
+                ref={toolsRef}
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2
+                            className={`text-3xl md:text-5xl font-black mb-4 ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                            }`}
+                        >
+                            Platform tools
+                        </h2>
+                        <p
+                            className={`text-lg ${
+                                isDarkMode ? "text-gray-400" : "text-gray-600"
+                            }`}
+                        >
+                            Practical sections the user can actually use inside
+                            the platform.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                        {platformTools.map((item, index) => (
+                            <ToolCard
+                                key={index}
+                                item={item}
+                                isDarkMode={isDarkMode}
+                                onPrimaryAction={toggleChat}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Journey steps */}
+            <section
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-950" : "bg-white"
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-10 items-start">
+                        <div>
+                            <h2
+                                className={`text-3xl md:text-5xl font-black mb-5 ${
+                                    isDarkMode ? "text-white" : "text-gray-900"
+                                }`}
+                            >
+                                How the user journey works
+                            </h2>
+                            <p
+                                className={`text-lg leading-8 ${
+                                    isDarkMode
+                                        ? "text-gray-400"
+                                        : "text-gray-600"
+                                }`}
+                            >
+                                The experience begins with understanding the
+                                user’s current state, then offering calm support
+                                paths, and finally encouraging small repeated
+                                habits that create real progress.
+                            </p>
+
+                            <div className="mt-8 space-y-4">
+                                {trustPoints.map((point, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-start gap-3"
+                                    >
+                                        <CheckCircle2
+                                            size={20}
+                                            className="text-blue-600 mt-1"
+                                        />
+                                        <p
+                                            className={`text-sm sm:text-base leading-7 ${
+                                                isDarkMode
+                                                    ? "text-gray-300"
+                                                    : "text-gray-700"
+                                            }`}
+                                        >
+                                            {point}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {steps.map((item, index) => (
+                                <div
+                                    key={index}
+                                    className={`rounded-3xl p-6 border ${
+                                        isDarkMode
+                                            ? "bg-gray-800 border-gray-700"
+                                            : "bg-gray-50 border-gray-200"
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shrink-0">
+                                            {item.number}
+                                        </div>
+                                        <div>
+                                            <h3
+                                                className={`text-xl font-bold mb-2 ${
+                                                    isDarkMode
+                                                        ? "text-white"
+                                                        : "text-gray-900"
+                                                }`}
+                                            >
+                                                {item.title}
+                                            </h3>
+                                            <p
+                                                className={`text-sm leading-7 ${
+                                                    isDarkMode
+                                                        ? "text-gray-300"
+                                                        : "text-gray-600"
+                                                }`}
+                                            >
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Trust / benefits */}
+            <section
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2
+                            className={`text-3xl md:text-5xl font-black mb-4 ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                            }`}
+                        >
+                            Why this direction fits Mind Gate
+                        </h2>
+                        <p
+                            className={`text-lg ${
+                                isDarkMode ? "text-gray-400" : "text-gray-600"
+                            }`}
+                        >
+                            The page now reflects a serious, supportive, and
+                            modern platform instead of a travel marketplace.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                        {[
+                            {
+                                icon: ShieldCheck,
+                                title: "Trust-first design",
+                                description:
+                                    "A calm visual language that supports the project identity.",
+                            },
+                            {
+                                icon: Clock3,
+                                title: "Useful daily return value",
+                                description:
+                                    "The interface encourages check-ins, reflection, and regular use.",
+                            },
+                            {
+                                icon: CircleHelp,
+                                title: "Clear support pathways",
+                                description:
+                                    "Users can quickly understand what they can do next.",
+                            },
+                            {
+                                icon: Star,
+                                title: "Professional presentation",
+                                description:
+                                    "The home page feels official, modern, and aligned with the platform idea.",
+                            },
+                        ].map((item, index) => {
+                            const Icon = item.icon;
+
+                            return (
+                                <div
+                                    key={index}
+                                    className={`rounded-3xl p-6 border ${
+                                        isDarkMode
+                                            ? "bg-gray-800 border-gray-700"
+                                            : "bg-white border-gray-200"
+                                    } shadow-sm`}
+                                >
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4">
+                                        <Icon
+                                            size={24}
+                                            className="text-blue-600"
+                                        />
+                                    </div>
+                                    <h3
+                                        className={`text-xl font-bold mb-3 ${
+                                            isDarkMode
+                                                ? "text-white"
+                                                : "text-gray-900"
+                                        }`}
+                                    >
+                                        {item.title}
+                                    </h3>
+                                    <p
+                                        className={`text-sm leading-7 ${
+                                            isDarkMode
+                                                ? "text-gray-300"
+                                                : "text-gray-600"
+                                        }`}
+                                    >
+                                        {item.description}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+
+            {/* Final CTA */}
+            <section
+                className={`py-20 ${
+                    isDarkMode ? "bg-gray-950" : "bg-white"
+                }`}
+            >
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div
+                        className={`rounded-[32px] p-8 sm:p-10 lg:p-14 text-center border ${
+                            isDarkMode
+                                ? "bg-gray-800 border-gray-700"
+                                : "bg-gradient-to-br from-blue-50 to-white border-blue-100"
+                        } shadow-xl`}
+                    >
+                        <div className="w-16 h-16 rounded-2xl bg-blue-600/10 flex items-center justify-center mx-auto mb-6">
+                            <Brain size={30} className="text-blue-600" />
+                        </div>
+
+                        <h2
+                            className={`text-3xl md:text-5xl font-black mb-4 ${
+                                isDarkMode ? "text-white" : "text-gray-900"
+                            }`}
+                        >
+                            Ready to continue shaping Mind Gate?
+                        </h2>
+
+                        <p
+                            className={`text-lg leading-8 max-w-3xl mx-auto ${
+                                isDarkMode ? "text-gray-300" : "text-gray-600"
+                            }`}
+                        >
+                            This version gives you a home page that actually
+                            matches the mental wellness idea, looks professional,
+                            and stays clean across screen sizes.
+                        </p>
+
+                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <button
+                                type="button"
+                                onClick={toggleChat}
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold"
+                            >
+                                Open AI assistant
+                                <MessageCircle size={18} />
+                            </button>
+
+                            <Link
+                                href="/ContactPage"
+                                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold transition-colors ${
+                                    isDarkMode
+                                        ? "bg-gray-700 text-white hover:bg-gray-600"
+                                        : "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                                }`}
+                            >
+                                Contact us
+                                <ArrowRight size={18} />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1366,24 +1074,29 @@ const HomePage = ({ auth, favorites: initialFavorites = [] }) => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
-                        className={`max-w-xs p-4 ${
+                        className={`relative max-w-xs p-4 rounded-2xl shadow-lg ${
                             isDarkMode
                                 ? "bg-gray-800 text-white"
-                                : "bg-white text-gray-900 border-2 border-gray-200"
-                        } rounded-xl shadow-lg`}
+                                : "bg-white text-gray-900 border border-gray-200"
+                        }`}
                     >
                         <button
-                            onClick={handleCloseTooltip}
+                            type="button"
+                            onClick={() => setIsTooltipVisible(false)}
                             className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
                         >
                             <X size={16} />
                         </button>
-                        <p className="text-sm font-semibold mb-1">Need Help?</p>
-                        <p className="text-xs opacity-80">
-                            Our AI assistant is here to help!
+                        <p className="text-sm font-semibold mb-1">
+                            Need support?
+                        </p>
+                        <p className="text-xs opacity-80 leading-6">
+                            The Mind Gate assistant can help you explore tools
+                            and support topics.
                         </p>
                     </motion.div>
                 )}
+
                 <ChatBot
                     isChatOpen={isChatOpen}
                     toggleChat={toggleChat}
