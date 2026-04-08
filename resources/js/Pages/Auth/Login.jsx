@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useForm } from "@inertiajs/react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "@/Layouts/AuthLayout";
 
@@ -44,15 +44,12 @@ export default function Login({ canResetPassword = true, status = null }) {
             noAccount: isArabic ? "ليس لديك حساب؟" : "Don't have an account?",
             create: isArabic ? "إنشاء حساب" : "Create one",
             boxText: isArabic
-                ? "ادخل للوصول إلى التقييمات، تتبع المزاج، والمواعيد، مع المختصين."
-                : "Sign in to access assessments, mood tracking, appointments, and specialist follow-up.",
+                ? "ادخل للوصول إلى التقييمات، تتبع المزاج، المواعيد، ومتابعة حالتك النفسية بسهولة."
+                : "Sign in to access assessments, mood tracking, appointments, and your wellness journey.",
             loginError: isArabic
                 ? "يرجى التحقق من بيانات تسجيل الدخول."
                 : "Please check your login details.",
-          
-            adminDesc: isArabic
-                ? "إذا كنت مشرفًا أو مسؤول نظام يمكنك الدخول من هنا."
-                : "If you are an administrator or system manager, sign in from here.",
+            adminLink: isArabic ? "أدمن ؟" : "Admin?",
         }),
         [isArabic],
     );
@@ -84,18 +81,14 @@ export default function Login({ canResetPassword = true, status = null }) {
                     <div className="relative">
                         <Mail
                             size={17}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "right-4" : "left-4"
-                            }`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "right-4" : "left-4"}`}
                             color={dc(C.textLow, L.textLow)}
                         />
                         <input
                             type="email"
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
-                            className={`w-full ${
-                                isArabic ? "pr-11 pl-4" : "pl-11 pr-4"
-                            } py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -127,9 +120,7 @@ export default function Login({ canResetPassword = true, status = null }) {
                     <div className="relative">
                         <Lock
                             size={17}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "right-4" : "left-4"
-                            }`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "right-4" : "left-4"}`}
                             color={dc(C.textLow, L.textLow)}
                         />
                         <input
@@ -138,9 +129,7 @@ export default function Login({ canResetPassword = true, status = null }) {
                             onChange={(e) =>
                                 setData("password", e.target.value)
                             }
-                            className={`w-full ${
-                                isArabic ? "pr-11 pl-11" : "pl-11 pr-11"
-                            } py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -157,9 +146,7 @@ export default function Login({ canResetPassword = true, status = null }) {
                         <button
                             type="button"
                             onClick={() => setShowPassword((prev) => !prev)}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "left-4" : "right-4"
-                            }`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "left-4" : "right-4"}`}
                             aria-label="Toggle password visibility"
                         >
                             {showPassword ? (
@@ -225,6 +212,7 @@ export default function Login({ canResetPassword = true, status = null }) {
                     {!processing && <ArrowRight size={16} />}
                 </button>
             </form>
+
             <div className="mt-5 text-center space-y-2">
                 <p
                     className="text-xs sm:text-sm"
@@ -249,10 +237,11 @@ export default function Login({ canResetPassword = true, status = null }) {
                         className="font-bold"
                         style={{ color: C.primary }}
                     >
-                        {isArabic ? "أدمن ؟" : "Admin?"}
+                        {t.adminLink}
                     </Link>
                 </p>
             </div>
+
             <div
                 className="mt-5 p-3.5 sm:p-4 rounded-2xl"
                 style={{
@@ -267,8 +256,6 @@ export default function Login({ canResetPassword = true, status = null }) {
                     {t.boxText}
                 </p>
             </div>
-
-            
         </AuthLayout>
     );
 }

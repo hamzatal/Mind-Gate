@@ -48,6 +48,6 @@ class Kernel extends HttpKernel
         'active' => \App\Http\Middleware\EnsureUserIsActive::class,
         'restrict.booking' => \App\Http\Middleware\RestrictBooking::class,
         'check.offer.validity' => \App\Http\Middleware\CheckOfferValidity::class,
-
+        'profile.completed' => \App\Http\Middleware\RedirectIfProfileIncomplete::class,
     ];
 }

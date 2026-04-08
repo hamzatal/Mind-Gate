@@ -1,16 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { useForm } from "@inertiajs/react";
-import { Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
+import { Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import AuthLayout from "@/Layouts/AuthLayout";
 
-const C = {
-    primary: "#7aa7bb",
-    textLow: "#8db0c0",
-};
-
-const L = {
-    textLow: "#4a6a7a",
-};
+const C = { primary: "#7aa7bb", textLow: "#8db0c0" };
+const L = { textLow: "#4a6a7a" };
 
 export default function ConfirmPassword() {
     const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +12,7 @@ export default function ConfirmPassword() {
     const locale = localStorage.getItem("mindgate_locale") || "en";
     const isArabic = locale === "ar";
     const isDarkMode = localStorage.getItem("darkMode") === "true";
+    const dc = (d, l) => (isDarkMode ? d : l);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         password: "",
@@ -27,19 +22,14 @@ export default function ConfirmPassword() {
         () => ({
             title: isArabic ? "تأكيد كلمة المرور" : "Confirm Password",
             desc: isArabic
-                ? "لأسباب أمنية، يرجى إدخال كلمة المرور الخاصة بك للمتابعة."
-                : "For security reasons, please confirm your password to continue.",
+                ? "هذه منطقة آمنة. يرجى تأكيد كلمة المرور للمتابعة."
+                : "This is a secure area. Please confirm your password to continue.",
             password: isArabic ? "كلمة المرور" : "Password",
-            placeholder: isArabic
-                ? "أدخل كلمة المرور الحالية"
-                : "Enter your current password",
             submit: isArabic ? "تأكيد" : "Confirm",
             submitting: isArabic ? "جاري التأكيد..." : "Confirming...",
         }),
         [isArabic],
     );
-
-    const dc = (darkValue, lightValue) => (isDarkMode ? darkValue : lightValue);
 
     const submit = (e) => {
         e.preventDefault();
@@ -50,31 +40,12 @@ export default function ConfirmPassword() {
 
     return (
         <AuthLayout title={t.title}>
-            <div
-                className="mb-5 rounded-2xl p-4"
-                style={{
-                    backgroundColor: dc("rgba(122,167,187,0.08)", "#f3f8fb"),
-                    border: `1px solid ${dc("rgba(122,167,187,0.16)", "#d7e6ee")}`,
-                }}
+            <p
+                className="text-xs sm:text-sm leading-6 mb-5"
+                style={{ color: dc(C.textLow, L.textLow) }}
             >
-                <div className="flex items-start gap-3">
-                    <div
-                        className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-                        style={{
-                            background:
-                                "linear-gradient(135deg, #7aa7bb, #6797ab)",
-                        }}
-                    >
-                        <ShieldCheck size={18} color="#fff" />
-                    </div>
-                    <p
-                        className="text-xs sm:text-sm leading-6"
-                        style={{ color: dc(C.textLow, L.textLow) }}
-                    >
-                        {t.desc}
-                    </p>
-                </div>
-            </div>
+                {t.desc}
+            </p>
 
             <form
                 onSubmit={submit}
@@ -100,7 +71,7 @@ export default function ConfirmPassword() {
                             onChange={(e) =>
                                 setData("password", e.target.value)
                             }
-                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 rounded-2xl border outline-none text-sm`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -111,12 +82,10 @@ export default function ConfirmPassword() {
                                     : dc("rgba(255,255,255,0.18)", "#c8dde8"),
                                 color: dc("#f0f7fa", "#162636"),
                             }}
-                            placeholder={t.placeholder}
-                            autoComplete="current-password"
                         />
                         <button
                             type="button"
-                            onClick={() => setShowPassword((prev) => !prev)}
+                            onClick={() => setShowPassword((v) => !v)}
                             className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "left-4" : "right-4"}`}
                         >
                             {showPassword ? (
@@ -142,7 +111,7 @@ export default function ConfirmPassword() {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold transition-all text-sm sm:text-base"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold text-sm"
                     style={{
                         background: "linear-gradient(135deg, #7aa7bb, #6797ab)",
                         boxShadow: "0 10px 24px rgba(122,167,187,0.30)",

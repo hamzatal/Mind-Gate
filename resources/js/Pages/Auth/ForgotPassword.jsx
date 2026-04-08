@@ -3,29 +3,22 @@ import { Link, useForm } from "@inertiajs/react";
 import { Mail, ArrowRight } from "lucide-react";
 import AuthLayout from "@/Layouts/AuthLayout";
 
-const C = {
-    primary: "#7aa7bb",
-    textLow: "#8db0c0",
-};
+const C = { primary: "#7aa7bb", textLow: "#8db0c0" };
+const L = { textLow: "#4a6a7a" };
 
-const L = {
-    textLow: "#4a6a7a",
-};
-
-export default function ForgotPassword({ status = null }) {
+export default function ForgotPassword({ status }) {
     const locale = localStorage.getItem("mindgate_locale") || "en";
     const isArabic = locale === "ar";
     const isDarkMode = localStorage.getItem("darkMode") === "true";
+    const dc = (d, l) => (isDarkMode ? d : l);
 
-    const { data, setData, post, processing, errors } = useForm({
-        email: "",
-    });
+    const { data, setData, post, processing, errors } = useForm({ email: "" });
 
     const t = useMemo(
         () => ({
-            title: isArabic ? "نسيت كلمة المرور" : "Forgot Password",
+            title: isArabic ? "استعادة كلمة المرور" : "Forgot Password",
             desc: isArabic
-                ? "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور."
+                ? "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور."
                 : "Enter your email and we will send you a password reset link.",
             email: isArabic ? "البريد الإلكتروني" : "Email address",
             emailPlaceholder: isArabic
@@ -37,8 +30,6 @@ export default function ForgotPassword({ status = null }) {
         }),
         [isArabic],
     );
-
-    const dc = (darkValue, lightValue) => (isDarkMode ? darkValue : lightValue);
 
     const submit = (e) => {
         e.preventDefault();
@@ -76,7 +67,7 @@ export default function ForgotPassword({ status = null }) {
                             type="email"
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
-                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 rounded-2xl border outline-none text-sm`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -100,7 +91,7 @@ export default function ForgotPassword({ status = null }) {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold transition-all text-sm sm:text-base"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold text-sm"
                     style={{
                         background: "linear-gradient(135deg, #7aa7bb, #6797ab)",
                         boxShadow: "0 10px 24px rgba(122,167,187,0.30)",
@@ -112,10 +103,10 @@ export default function ForgotPassword({ status = null }) {
                 </button>
             </form>
 
-            <div className="mt-5 text-center">
+            <div className="mt-4 text-center">
                 <Link
                     href={route("login")}
-                    className="text-xs sm:text-sm font-bold"
+                    className="font-bold text-xs sm:text-sm"
                     style={{ color: C.primary }}
                 >
                     {t.back}

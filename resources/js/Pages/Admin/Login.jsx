@@ -5,9 +5,7 @@ import toast from "react-hot-toast";
 import AuthLayout from "@/Layouts/AuthLayout";
 
 const C = {
-    primary: "#7aa7bb",
     admin: "#dc2626",
-    adminDark: "#b91c1c",
     textLow: "#8db0c0",
 };
 
@@ -33,12 +31,6 @@ export default function AdminLogin({ status = null }) {
             title: isArabic ? "دخول الإدارة" : "Admin Login",
             email: isArabic ? "البريد الإلكتروني" : "Email address",
             password: isArabic ? "كلمة المرور" : "Password",
-            emailPlaceholder: isArabic
-                ? "admin@example.com"
-                : "admin@example.com",
-            passwordPlaceholder: isArabic
-                ? "أدخل كلمة مرور الإدارة"
-                : "Enter admin password",
             remember: isArabic ? "تذكرني" : "Remember me",
             forgot: isArabic ? "نسيت كلمة المرور؟" : "Forgot password?",
             button: isArabic ? "تسجيل دخول الإدارة" : "Admin Sign in",
@@ -92,7 +84,6 @@ export default function AdminLogin({ status = null }) {
                         >
                             {t.adminBoxTitle}
                         </h3>
-
                         <p
                             className="text-[11px] sm:text-xs leading-5"
                             style={{ color: dc(C.textLow, L.textLow) }}
@@ -115,23 +106,17 @@ export default function AdminLogin({ status = null }) {
                     >
                         {t.email}
                     </label>
-
                     <div className="relative">
                         <Mail
                             size={17}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "right-4" : "left-4"
-                            }`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "right-4" : "left-4"}`}
                             color={dc(C.textLow, L.textLow)}
                         />
-
                         <input
                             type="email"
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
-                            className={`w-full ${
-                                isArabic ? "pr-11 pl-4" : "pl-11 pr-4"
-                            } py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 sm:py-3.5 rounded-2xl border outline-none text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -142,11 +127,8 @@ export default function AdminLogin({ status = null }) {
                                     : dc("rgba(255,255,255,0.18)", "#c8dde8"),
                                 color: dc("#f0f7fa", "#162636"),
                             }}
-                            placeholder={t.emailPlaceholder}
-                            autoComplete="username"
                         />
                     </div>
-
                     {errors.email && (
                         <p className="text-xs mt-2 text-red-500">
                             {errors.email}
@@ -161,25 +143,19 @@ export default function AdminLogin({ status = null }) {
                     >
                         {t.password}
                     </label>
-
                     <div className="relative">
                         <Lock
                             size={17}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "right-4" : "left-4"
-                            }`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "right-4" : "left-4"}`}
                             color={dc(C.textLow, L.textLow)}
                         />
-
                         <input
                             type={showPassword ? "text" : "password"}
                             value={data.password}
                             onChange={(e) =>
                                 setData("password", e.target.value)
                             }
-                            className={`w-full ${
-                                isArabic ? "pr-11 pl-11" : "pl-11 pr-11"
-                            } py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 sm:py-3.5 rounded-2xl border outline-none text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -190,17 +166,11 @@ export default function AdminLogin({ status = null }) {
                                     : dc("rgba(255,255,255,0.18)", "#c8dde8"),
                                 color: dc("#f0f7fa", "#162636"),
                             }}
-                            placeholder={t.passwordPlaceholder}
-                            autoComplete="current-password"
                         />
-
                         <button
                             type="button"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                                isArabic ? "left-4" : "right-4"
-                            }`}
-                            aria-label="Toggle password visibility"
+                            onClick={() => setShowPassword((v) => !v)}
+                            className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "left-4" : "right-4"}`}
                         >
                             {showPassword ? (
                                 <EyeOff
@@ -215,7 +185,6 @@ export default function AdminLogin({ status = null }) {
                             )}
                         </button>
                     </div>
-
                     {errors.password && (
                         <p className="text-xs mt-2 text-red-500">
                             {errors.password}
@@ -253,7 +222,7 @@ export default function AdminLogin({ status = null }) {
                 <button
                     type="submit"
                     disabled={processing}
-                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold transition-all text-sm sm:text-base"
+                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold text-sm sm:text-base"
                     style={{
                         background: "linear-gradient(135deg, #dc2626, #b91c1c)",
                         boxShadow: "0 10px 24px rgba(220,38,38,0.28)",

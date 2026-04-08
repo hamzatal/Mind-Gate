@@ -12,8 +12,6 @@ class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
-     *
-     * @return \Inertia\Response
      */
     public function create()
     {
@@ -24,41 +22,40 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
-     *
-     * @param  \App\Http\Requests\Auth\LoginRequest  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(LoginRequest $request)
     {
-        // Attempt to authenticate the user
-        $request->authenticate();
-
-        // Check if the user is active
-        if (!Auth::user()->is_active) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        if (!Auth::attempt([
+            'email' => $request->email,
+            'password' => $request->password,
+            'is_active' => 1,
+        ], $request->boolean('remember'))) {
             throw ValidationException::withMessages([
-                'email' => 'Your account has been deactivated. Please contact support.',
+                'email' => 'Your account is deactivated or the login details are incorrect.',
             ]);
         }
 
-        // Regenerate session only after is_active check
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        if (!$user->profile_completed) {
+            return redirect()->route('onboarding.create');
+        }
+
+        return redirect()->route('home');
     }
 
     /**
      * Destroy an authenticated session.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

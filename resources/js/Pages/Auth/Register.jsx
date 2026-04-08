@@ -72,7 +72,6 @@ export default function Register() {
                 ? "لديك حساب بالفعل؟"
                 : "Already have an account?",
             login: isArabic ? "تسجيل الدخول" : "Login",
-         
         }),
         [isArabic],
     );
@@ -414,8 +413,6 @@ export default function Register() {
                     </Link>
                 </p>
             </div>
-
-            
         </AuthLayout>
     );
 }

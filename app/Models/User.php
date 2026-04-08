@@ -2,26 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name',
+        'full_name',
         'email',
         'password',
-        'bio',
         'phone',
-        'avatar',
+        'date_of_birth',
+        'gender',
+        'organization_id',
         'is_active',
-        'deactivated_at',
-        'deactivation_reason',
+        'profile_completed',
     ];
 
     protected $hidden = [
@@ -29,24 +28,37 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'deactivated_at' => 'datetime',
-        'is_active' => 'boolean',
-    ];
-
-    public function bookings()
+    protected function casts(): array
     {
-        return $this->hasMany(Checkout::class);
+        return [
+            'email_verified_at' => 'datetime',
+            'date_of_birth' => 'date',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'profile_completed' => 'boolean',
+        ];
     }
 
-    public function reviews()
+    public function organization()
     {
-        return $this->hasMany(Review::class);
+        return $this->belongsTo(Organization::class);
     }
 
-    public function favorites()
+    public function appointments()
     {
-        return $this->hasMany(Favorite::class);
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function assessments()
+    {
+        return $this->hasMany(Assessment::class);
+    }
+    public function patientProfile()
+    {
+        return $this->hasOne(\App\Models\PatientProfile::class);
+    }
+    public function moodLogs()
+    {
+        return $this->hasMany(MoodLog::class);
     }
 }

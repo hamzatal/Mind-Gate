@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Link, useForm } from "@inertiajs/react";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "@/Layouts/AuthLayout";
 
 const C = {
-    primary: "#7aa7bb",
+    admin: "#dc2626",
     textLow: "#8db0c0",
 };
 
@@ -13,7 +13,7 @@ const L = {
     textLow: "#4a6a7a",
 };
 
-export default function AdminLogin({ canResetPassword = true, status = null }) {
+export default function AdminLogin({ status = null }) {
     const [showPassword, setShowPassword] = useState(false);
 
     const locale = localStorage.getItem("mindgate_locale") || "en";
@@ -29,30 +29,20 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
     const t = useMemo(
         () => ({
             title: isArabic ? "دخول الإدارة" : "Admin Login",
-            subtitle: isArabic
-                ? "تسجيل الدخول إلى لوحة الإدارة"
-                : "Sign in to the admin control panel",
             email: isArabic ? "البريد الإلكتروني" : "Email address",
             password: isArabic ? "كلمة المرور" : "Password",
             remember: isArabic ? "تذكرني" : "Remember me",
             forgot: isArabic ? "نسيت كلمة المرور؟" : "Forgot password?",
-            submit: isArabic ? "دخول الإدارة" : "Admin sign in",
-            submitting: isArabic ? "جاري تسجيل الدخول..." : "Signing in...",
-            backUser: isArabic
-                ? "العودة لتسجيل دخول المستخدم"
-                : "Back to user login",
-            emailPlaceholder: isArabic
-                ? "admin@email.com"
-                : "admin@example.com",
-            passwordPlaceholder: isArabic
-                ? "أدخل كلمة المرور"
-                : "Enter your password",
-            error: isArabic
+            button: isArabic ? "تسجيل دخول الإدارة" : "Admin Sign in",
+            signing: isArabic ? "جاري تسجيل الدخول..." : "Signing in...",
+            adminBoxTitle: isArabic ? "بوابة الإدارة" : "Administration Portal",
+            adminBoxText: isArabic
+                ? "هذه الصفحة مخصصة للمشرفين فقط للوصول إلى لوحة التحكم وإدارة النظام."
+                : "This page is intended for administrators to access the control panel and manage the platform.",
+            backToUser: isArabic ? "مستخدم ؟" : "User?",
+            loginError: isArabic
                 ? "يرجى التحقق من بيانات دخول الإدارة."
-                : "Please check your admin login details.",
-            note: isArabic
-                ? "هذه الصفحة مخصصة للمشرفين والإدارة فقط للوصول إلى أدوات التحكم والمتابعة."
-                : "This page is intended for administrators only to access control and management tools.",
+                : "Please check your admin credentials.",
         }),
         [isArabic],
     );
@@ -61,9 +51,9 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("admin.login"), {
+        post(route("admin.login.submit"), {
             onFinish: () => reset("password"),
-            onError: () => toast.error(t.error),
+            onError: () => toast.error(t.loginError),
         });
     };
 
@@ -72,32 +62,33 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
             <div
                 className="mb-5 rounded-2xl p-4"
                 style={{
-                    backgroundColor: dc("rgba(122,167,187,0.08)", "#f3f8fb"),
-                    border: `1px solid ${dc("rgba(122,167,187,0.16)", "#d7e6ee")}`,
+                    backgroundColor: dc("rgba(220,38,38,0.10)", "#fef2f2"),
+                    border: `1px solid ${dc("rgba(220,38,38,0.20)", "#fecaca")}`,
                 }}
             >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                     <div
-                        className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
                         style={{
                             background:
-                                "linear-gradient(135deg, #7aa7bb, #6797ab)",
+                                "linear-gradient(135deg, #dc2626, #b91c1c)",
                         }}
                     >
                         <ShieldCheck size={18} color="#fff" />
                     </div>
-                    <div>
+
+                    <div className="flex-1 min-w-0">
                         <h3
-                            className="text-sm font-bold"
+                            className="text-sm font-bold mb-1"
                             style={{ color: dc("#f0f7fa", "#162636") }}
                         >
-                            {t.subtitle}
+                            {t.adminBoxTitle}
                         </h3>
                         <p
-                            className="text-xs mt-1"
+                            className="text-[11px] sm:text-xs leading-5"
                             style={{ color: dc(C.textLow, L.textLow) }}
                         >
-                            {t.note}
+                            {t.adminBoxText}
                         </p>
                     </div>
                 </div>
@@ -125,7 +116,7 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
                             type="email"
                             value={data.email}
                             onChange={(e) => setData("email", e.target.value)}
-                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-4" : "pl-11 pr-4"} py-3 sm:py-3.5 rounded-2xl border outline-none text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -136,8 +127,6 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
                                     : dc("rgba(255,255,255,0.18)", "#c8dde8"),
                                 color: dc("#f0f7fa", "#162636"),
                             }}
-                            placeholder={t.emailPlaceholder}
-                            autoComplete="username"
                         />
                     </div>
                     {errors.email && (
@@ -166,7 +155,7 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
                             onChange={(e) =>
                                 setData("password", e.target.value)
                             }
-                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 sm:py-3.5 rounded-2xl border outline-none transition-all text-sm sm:text-base`}
+                            className={`w-full ${isArabic ? "pr-11 pl-11" : "pl-11 pr-11"} py-3 sm:py-3.5 rounded-2xl border outline-none text-sm sm:text-base`}
                             style={{
                                 backgroundColor: dc(
                                     "rgba(255,255,255,0.07)",
@@ -177,12 +166,10 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
                                     : dc("rgba(255,255,255,0.18)", "#c8dde8"),
                                 color: dc("#f0f7fa", "#162636"),
                             }}
-                            placeholder={t.passwordPlaceholder}
-                            autoComplete="current-password"
                         />
                         <button
                             type="button"
-                            onClick={() => setShowPassword((prev) => !prev)}
+                            onClick={() => setShowPassword((v) => !v)}
                             className={`absolute top-1/2 -translate-y-1/2 ${isArabic ? "left-4" : "right-4"}`}
                         >
                             {showPassword ? (
@@ -223,40 +210,43 @@ export default function AdminLogin({ canResetPassword = true, status = null }) {
                         </span>
                     </label>
 
-                    {canResetPassword && (
-                        <Link
-                            href={route("password.request")}
-                            className="text-xs sm:text-sm font-semibold"
-                            style={{ color: C.primary }}
-                        >
-                            {t.forgot}
-                        </Link>
-                    )}
+                    <Link
+                        href={route("password.request")}
+                        className="text-xs sm:text-sm font-semibold"
+                        style={{ color: C.admin }}
+                    >
+                        {t.forgot}
+                    </Link>
                 </div>
 
                 <button
                     type="submit"
                     disabled={processing}
-                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold transition-all text-sm sm:text-base"
+                    className="w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl text-white font-bold text-sm sm:text-base"
                     style={{
-                        background: "linear-gradient(135deg, #7aa7bb, #6797ab)",
-                        boxShadow: "0 10px 24px rgba(122,167,187,0.30)",
+                        background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+                        boxShadow: "0 10px 24px rgba(220,38,38,0.28)",
                         opacity: processing ? 0.7 : 1,
                     }}
                 >
-                    {processing ? t.submitting : t.submit}
+                    {processing ? t.signing : t.button}
                     {!processing && <ArrowRight size={16} />}
                 </button>
             </form>
 
             <div className="mt-5 text-center">
-                <Link
-                    href={route("login")}
-                    className="text-xs sm:text-sm font-bold"
-                    style={{ color: C.primary }}
+                <p
+                    className="text-xs sm:text-sm"
+                    style={{ color: dc(C.textLow, L.textLow) }}
                 >
-                    {t.backUser}
-                </Link>
+                    <Link
+                        href={route("login")}
+                        className="font-bold"
+                        style={{ color: C.admin }}
+                    >
+                        {t.backToUser}
+                    </Link>
+                </p>
             </div>
         </AuthLayout>
     );
