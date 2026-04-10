@@ -1,12 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
-
-use App\Services\ChatGPTServices;
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
@@ -19,49 +15,47 @@ use App\Http\Controllers\AdminAuth\DashboardController;
 use App\Http\Controllers\AdminAuth\HeroSectionController;
 use App\Http\Controllers\AdminAuth\LoginController;
 
-// ===================================================
-// Authentication Routes
-// ===================================================
 require __DIR__ . '/auth.php';
 
-// ===================================================
-// Public Routes
-// ===================================================
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-})->name('welcome');
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/', [HomeController::class, 'index'])->name('welcome');
 
 Route::get('/about-us', fn() => Inertia::render('about-us'))->name('about-us');
 Route::get('/ContactPage', fn() => Inertia::render('ContactPage'))->name('ContactPage');
 Route::post('/contacts', [ContactController::class, 'store'])->name('contacts.store');
 
-// ===================================================
-// Admin Auth Routes
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| Admin Auth Routes
+|--------------------------------------------------------------------------
+*/
 Route::get('/admin/login', [LoginController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [LoginController::class, 'store'])->name('admin.login.submit');
 
-// ===================================================
-// User Onboarding Routes
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| User Onboarding Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:web', 'verified', 'active'])->group(function () {
     Route::get('/onboarding', [OnboardingController::class, 'create'])->name('onboarding.create');
     Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
 });
 
-// ===================================================
-// User Protected Routes
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| User Protected Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:web', 'verified', 'active', 'profile.completed'])->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     Route::get('/UserProfile', fn() => Inertia::render('UserProfile', [
-        'user' => Auth::user()
+        'user' => Auth::user(),
     ]))->name('UserProfile');
 
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -72,16 +66,18 @@ Route::middleware(['auth:web', 'verified', 'active', 'profile.completed'])->grou
     });
 });
 
-// ===================================================
-// Admin Protected Routes
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| Admin Protected Routes
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [AdminController::class, 'getAdminProfile'])->name('profile');
-    Route::put('/profile', [AdminController::class, 'updateAdminProfile'])->name('profile.update');
+    Route::post('/profile', [AdminController::class, 'updateAdminProfile'])->name('profile.update');
     Route::post('/profile/password', [AdminController::class, 'updateAdminPassword'])->name('profile.password');
 
     Route::prefix('users')->name('users.')->group(function () {
@@ -101,13 +97,17 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     });
 });
 
-// ===================================================
-// Chatbot Route
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| Chatbot
+|--------------------------------------------------------------------------
+*/
 Route::post('/chatbot', [ChatBotController::class, 'handleChat'])->name('chatbot.handle');
 
-// ===================================================
-// Fallback Routes
-// ===================================================
+/*
+|--------------------------------------------------------------------------
+| Fallback
+|--------------------------------------------------------------------------
+*/
 Route::get('/404', fn() => Inertia::render('Errors/404'))->name('404');
 Route::fallback(fn() => Inertia::render('Errors/404'));
