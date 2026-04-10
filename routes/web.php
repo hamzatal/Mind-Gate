@@ -23,6 +23,7 @@ require __DIR__ . '/auth.php';
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('welcome');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 Route::get('/about-us', fn() => Inertia::render('about-us'))->name('about-us');
 Route::get('/ContactPage', fn() => Inertia::render('ContactPage'))->name('ContactPage');
@@ -52,8 +53,6 @@ Route::middleware(['auth:web', 'verified', 'active'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:web', 'verified', 'active', 'profile.completed'])->group(function () {
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
-
     Route::get('/UserProfile', fn() => Inertia::render('UserProfile', [
         'user' => Auth::user(),
     ]))->name('UserProfile');
@@ -97,17 +96,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     });
 });
 
-/*
-|--------------------------------------------------------------------------
-| Chatbot
-|--------------------------------------------------------------------------
-*/
 Route::post('/chatbot', [ChatBotController::class, 'handleChat'])->name('chatbot.handle');
 
-/*
-|--------------------------------------------------------------------------
-| Fallback
-|--------------------------------------------------------------------------
-*/
 Route::get('/404', fn() => Inertia::render('Errors/404'))->name('404');
 Route::fallback(fn() => Inertia::render('Errors/404'));

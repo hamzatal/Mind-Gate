@@ -1,310 +1,344 @@
-import React, { useState, useEffect } from "react";
-import { Head, usePage, Link, useForm, router } from "@inertiajs/react";
-import {
-    Users,
-    MessageSquare,
-    MapPin,
-    Tag,
-    Image,
-    LogOut,
-    Grid,
-    Shield,
-    Eye,
-    Download,
-    Trash2,
-    Edit,
-    Search,
-    CheckCircle,
-    XCircle,
-} from "lucide-react";
-import AdminSidebar from "@/Components/AdminSidebar";
+import React, { useEffect, useMemo, useState } from "react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Search, Mail, Power, Users, Filter } from "lucide-react";
+import AdminLayout from "@/Layouts/AdminLayout";
 
-export default function AdminUsers({ users }) {
+function FlashBanner({ flash }) {
+    if (!flash?.success && !flash?.error) return null;
+
+    const isError = !!flash.error;
+    const text = flash.error || flash.success;
+
+    return (
+        <div
+            className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                isError
+                    ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
+            }`}
+        >
+            {text}
+        </div>
+    );
+}
+
+export default function AdminUsers({ auth, users }) {
     const { props } = usePage();
-
-    // Safely extract data with fallbacks
-    const admin = props.admin || props.auth?.user || {};
     const flash = props.flash || {};
 
-    // State for search and filter
+    const locale =
+        typeof window !== "undefined"
+            ? localStorage.getItem("mindgate_locale") || "en"
+            : "en";
+
+    const isArabic = locale === "ar";
+
+    const t = useMemo(
+        () => ({
+            title: isArabic ? "المستخدمون" : "Users",
+            search: isArabic ? "ابحث عن مستخدم..." : "Search users...",
+            all: isArabic ? "الكل" : "All",
+            active: isArabic ? "نشط" : "Active",
+            inactive: isArabic ? "معطل" : "Inactive",
+            user: isArabic ? "المستخدم" : "User",
+            email: isArabic ? "البريد الإلكتروني" : "Email",
+            created: isArabic ? "تاريخ الإنشاء" : "Created",
+            status: isArabic ? "الحالة" : "Status",
+            actions: isArabic ? "الإجراءات" : "Actions",
+            noUsers: isArabic ? "لا يوجد مستخدمون." : "No users found.",
+            activate: isArabic ? "تفعيل" : "Activate",
+            deactivate: isArabic ? "تعطيل" : "Deactivate",
+            results: isArabic ? "عدد النتائج" : "Results",
+        }),
+        [isArabic],
+    );
+
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
-
-    // Set up form for status toggle
     const toggleForm = useForm({});
+    const rows = users?.data || [];
+    const admin = auth?.user || {};
 
-    // Function to toggle user status
-    const toggleUserStatus = (userId) => {
-        toggleForm.post(`/admin/users/${userId}/toggle-status`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                // Success is handled by flash messages
-            },
-        });
-    };
-
-    // Handle search and filter changes
     useEffect(() => {
-        // Debounce the search/filter request to avoid excessive calls
         const timer = setTimeout(() => {
             router.get(
-                "/admin/users",
+                route("admin.users.index"),
                 { search: searchQuery, status: filterStatus },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                },
+                { preserveState: true, preserveScroll: true, replace: true },
             );
-        }, 300);
+        }, 320);
 
         return () => clearTimeout(timer);
     }, [searchQuery, filterStatus]);
 
-    // Safe access to user name with fallback
-    const adminName = admin?.name || "Admin";
-    const adminInitial = adminName.charAt(0).toUpperCase() || "A";
+    const toggleUserStatus = (userId) => {
+        toggleForm.post(route("admin.users.toggle-status", userId), {
+            preserveScroll: true,
+        });
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-            <Head title="User Management - Mind Gate Admin" />
+        <AdminLayout title={t.title} auth={auth}>
+            <Head title={`${t.title} - Mind Gate`} />
+            <FlashBanner flash={flash} />
 
-            {/* Main Content */}
-            <div className="ml-64 p-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold">User Management</h1>
-                </div>
+            <div className="space-y-6">
+                <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                        <div>
+                            <div className="inline-flex items-center gap-2 rounded-full bg-[#7aa7bb]/10 px-3 py-1 text-xs font-extrabold text-[#7aa7bb]">
+                                <Users size={14} />
+                                Mind Gate
+                            </div>
 
-                {/* Flash Messages */}
-                {flash.success && (
-                    <div className="bg-green-600/20 border border-green-500 text-green-200 px-4 py-3 rounded mb-6 flex items-center">
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        {flash.success}
-                    </div>
-                )}
-
-                {flash.error && (
-                    <div className="bg-red-600/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-6 flex items-center">
-                        <XCircle className="w-5 h-5 mr-2" />
-                        {flash.error}
-                    </div>
-                )}
-
-                {/* Search and Filter Bar */}
-                <div className="bg-gray-800 p-4 rounded-lg mb-6">
-                    <div className="flex items-center space-x-4">
-                        <div className="relative flex-grow">
-                            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search users..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            <h2 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-white">
+                                {t.title}
+                            </h2>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                {t.results}: {users?.total ?? 0}
+                            </p>
                         </div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">All Users</option>
-                            <option value="active">Active Users</option>
-                            <option value="inactive">Inactive Users</option>
-                        </select>
-                    </div>
-                </div>
 
-                {/* Users Table */}
-                <div className="bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-700">
-                        <thead className="bg-gray-900">
-                            <tr>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                        <div className="grid gap-3 sm:grid-cols-[1fr_180px] xl:w-[520px]">
+                            <div className="relative">
+                                <Search
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                    size={18}
+                                />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder={t.search}
+                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <Filter
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                    size={16}
+                                />
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) =>
+                                        setFilterStatus(e.target.value)
+                                    }
+                                    className="w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                                 >
-                                    User
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                                >
-                                    Email
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                                >
-                                    Joined Date
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                                >
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-700">
-                            {users.data.length > 0 ? (
-                                users.data.map((user) => (
-                                    <tr key={user.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="bg-gradient-to-br from-blue-500 to-blue-700 w-10 h-10 rounded-full flex items-center justify-center mr-4">
-                                                    {(user.name || "?")
-                                                        .charAt(0)
-                                                        .toUpperCase()}
+                                    <option value="">{t.all}</option>
+                                    <option value="active">{t.active}</option>
+                                    <option value="inactive">
+                                        {t.inactive}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
+                    <div className="hidden xl:block overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="border-b border-slate-200 dark:border-slate-800">
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        {t.user}
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        {t.email}
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        {t.created}
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        {t.status}
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                                        {t.actions}
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {rows.length > 0 ? (
+                                    rows.map((user) => (
+                                        <tr
+                                            key={user.id}
+                                            className="border-b border-slate-100 transition hover:bg-slate-50/80 dark:border-slate-800 dark:hover:bg-slate-900/60"
+                                        >
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] font-bold text-white">
+                                                        {(user.name || "?")
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="truncate font-bold text-slate-900 dark:text-white">
+                                                            {user.name ||
+                                                                "Unknown User"}
+                                                        </p>
+                                                        <p className="text-xs text-slate-400">
+                                                            ID: {user.id}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium">
-                                                        {user.name ||
-                                                            "Unknown User"}
-                                                    </p>
-                                                    <p className="text-xs text-gray-400">
-                                                        ID: {user.id}
-                                                    </p>
+                                            </td>
+
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                                    <Mail size={14} />
+                                                    {user.email || "No email"}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {user.email || "No email"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                            {user.created_at
-                                                ? new Date(
-                                                      user.created_at,
-                                                  ).toLocaleDateString()
-                                                : "Unknown date"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {user.is_active ? (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Active
+                                            </td>
+
+                                            <td className="px-6 py-5 text-sm text-slate-500 dark:text-slate-400">
+                                                {user.created_at
+                                                    ? new Date(
+                                                          user.created_at,
+                                                      ).toLocaleDateString()
+                                                    : "-"}
+                                            </td>
+
+                                            <td className="px-6 py-5">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                        user.is_active
+                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                                    }`}
+                                                >
+                                                    {user.is_active
+                                                        ? t.active
+                                                        : t.inactive}
                                                 </span>
-                                            ) : (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                    Inactive
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div className="flex space-x-2">
+                                            </td>
+
+                                            <td className="px-6 py-5">
                                                 <button
                                                     onClick={() =>
                                                         toggleUserStatus(
                                                             user.id,
                                                         )
                                                     }
-                                                    className={`px-3 py-1 rounded-full inline-flex items-center ${
-                                                        user.is_active
-                                                            ? user.id ===
-                                                              admin.id
-                                                                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                                                                : "bg-red-100 text-red-800 hover:bg-red-200"
-                                                            : "bg-green-100 text-green-800 hover:bg-green-200"
-                                                    }`}
                                                     disabled={
                                                         user.id === admin.id ||
                                                         toggleForm.processing
                                                     }
-                                                    title={
-                                                        user.id === admin.id
-                                                            ? "Cannot deactivate your own account"
-                                                            : ""
-                                                    }
+                                                    className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition ${
+                                                        user.is_active
+                                                            ? user.id ===
+                                                              admin.id
+                                                                ? "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500"
+                                                                : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400"
+                                                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                                    }`}
                                                 >
-                                                    {user.is_active ? (
-                                                        <>
-                                                            <XCircle className="w-4 h-4 mr-1" />
-                                                            <span className="text-xs font-semibold">
-                                                                Deactivate
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <CheckCircle className="w-4 h-4 mr-1" />
-                                                            <span className="text-xs font-semibold">
-                                                                Activate
-                                                            </span>
-                                                        </>
-                                                    )}
+                                                    <Power size={14} />
+                                                    {user.is_active
+                                                        ? t.deactivate
+                                                        : t.activate}
                                                 </button>
-                                            </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan="5"
+                                            className="px-6 py-12 text-center text-sm text-slate-400"
+                                        >
+                                            {t.noUsers}
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan="5"
-                                        className="px-6 py-4 text-center text-gray-400"
-                                    >
-                                        No users found
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {users.links && users.links.length > 3 && (
-                    <div className="flex justify-between items-center mt-6 bg-gray-800 rounded-lg px-4 py-3">
-                        <div className="text-sm text-gray-400">
-                            Showing{" "}
-                            <span className="font-medium">
-                                {users.from || 0}
-                            </span>{" "}
-                            to{" "}
-                            <span className="font-medium">{users.to || 0}</span>{" "}
-                            of{" "}
-                            <span className="font-medium">
-                                {users.total || 0}
-                            </span>{" "}
-                            results
-                        </div>
-                        <div className="flex space-x-1">
-                            {users.links.map((link, i) => {
-                                // Skip prev/next links if they're disabled
-                                if (
-                                    (i === 0 && link.url === null) ||
-                                    (i === users.links.length - 1 &&
-                                        link.url === null)
-                                ) {
-                                    return null;
-                                }
-
-                                return (
-                                    <Link
-                                        key={i}
-                                        href={link.url || "#"}
-                                        className={`px-3 py-1 rounded ${
-                                            link.active
-                                                ? "bg-blue-600 text-white"
-                                                : link.url === null
-                                                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                                                  : "bg-gray-700 text-white hover:bg-gray-600"
-                                        }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                );
-                            })}
-                        </div>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
 
-                <AdminSidebar />
+                    <div className="grid gap-4 p-4 xl:hidden">
+                        {rows.length > 0 ? (
+                            rows.map((user) => (
+                                <div
+                                    key={user.id}
+                                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] font-bold text-white">
+                                                {(user.name || "?")
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 dark:text-white">
+                                                    {user.name ||
+                                                        "Unknown User"}
+                                                </p>
+                                                <p className="text-xs text-slate-400">
+                                                    ID: {user.id}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                user.is_active
+                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                            }`}
+                                        >
+                                            {user.is_active
+                                                ? t.active
+                                                : t.inactive}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                        <div>{user.email || "No email"}</div>
+                                        <div>
+                                            {user.created_at
+                                                ? new Date(
+                                                      user.created_at,
+                                                  ).toLocaleDateString()
+                                                : "-"}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() =>
+                                            toggleUserStatus(user.id)
+                                        }
+                                        disabled={
+                                            user.id === admin.id ||
+                                            toggleForm.processing
+                                        }
+                                        className={`mt-4 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition ${
+                                            user.is_active
+                                                ? user.id === admin.id
+                                                    ? "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500"
+                                                    : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400"
+                                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                        }`}
+                                    >
+                                        <Power size={14} />
+                                        {user.is_active
+                                            ? t.deactivate
+                                            : t.activate}
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="rounded-3xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
+                                {t.noUsers}
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
-        </div>
+        </AdminLayout>
     );
 }

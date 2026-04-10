@@ -7,16 +7,41 @@ use App\Models\HeroSection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class HeroSectionController extends Controller
 {
     public function index()
     {
-        $heroSections = HeroSection::all();
-        return inertia('Admin/Hero/AdminHero', [
+        $admin = Auth::guard('admin')->user();
+
+        $heroSections = HeroSection::latest()->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'subtitle' => $item->subtitle,
+                'image' => $item->image ? Storage::url($item->image) : null,
+                'is_active' => (bool) $item->is_active,
+                'created_at' => $item->created_at,
+            ];
+        });
+
+        return Inertia::render('Admin/HeroSections', [
+            'auth' => [
+                'user' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                    'email' => $admin->email,
+                    'avatar' => null,
+                ],
+            ],
             'heroSections' => $heroSections,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
         ]);
     }
 
@@ -24,24 +49,20 @@ class HeroSectionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'title' => 'required|string|min:3|max:255',
-                'subtitle' => 'required|string|min:3|max:255',
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'title' => 'nullable|string|max:255',
+                'subtitle' => 'nullable|string|max:2000',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ]);
-
-            Log::debug('Store hero section validated:', ['data' => $validated]);
 
             $imageName = time() . '.' . $request->image->extension();
             $request->image->storeAs('hero', $imageName, 'public');
 
-            $hero = HeroSection::create([
-                'title' => $validated['title'],
-                'subtitle' => $validated['subtitle'],
+            HeroSection::create([
+                'title' => $validated['title'] ?? '',
+                'subtitle' => $validated['subtitle'] ?? '',
                 'image' => 'hero/' . $imageName,
                 'is_active' => true,
             ]);
-
-            Log::debug('Hero section created:', ['id' => $hero->id]);
 
             return redirect()->route('admin.hero.index')->with('success', 'Hero section added successfully.');
         } catch (ValidationException $e) {
@@ -55,82 +76,32 @@ class HeroSectionController extends Controller
 
     public function update(Request $request, $id)
     {
-        Log::debug('Update hero section request:', [
-            'id' => $id,
-            'data' => $request->except('image'),
-            'has_file' => $request->hasFile('image'),
-            'files' => $request->allFiles(),
-            'headers' => $request->headers->all(),
-        ]);
-
         try {
             $hero = HeroSection::findOrFail($id);
 
-            Log::debug('Hero section before update:', ['attributes' => $hero->getAttributes()]);
-
             $validated = $request->validate([
-                'title' => 'nullable|string|min:3|max:255',
-                'subtitle' => 'nullable|string|min:3|max:255',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'title' => 'nullable|string|max:255',
+                'subtitle' => 'nullable|string|max:2000',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ]);
-
-            Log::debug('Update hero section validated:', ['data' => $validated]);
 
             $data = [
-                'title' => $validated['title'] ?? $hero->title,
-                'subtitle' => $validated['subtitle'] ?? $hero->subtitle,
-                'image' => $hero->image ?? '',
+                'title' => $validated['title'] ?? '',
+                'subtitle' => $validated['subtitle'] ?? '',
+                'image' => $hero->image,
             ];
 
-            // Handle image upload
             if ($request->hasFile('image')) {
-                $file = $request->file('image');
-                Log::debug('New image detected:', [
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_size' => $file->getSize(),
-                    'file_type' => $file->getMimeType(),
-                ]);
-
-                // Delete old image if exists
                 if ($hero->image) {
                     Storage::disk('public')->delete($hero->image);
-                    Log::debug('Old image deleted:', ['old_path' => $hero->image]);
                 }
 
-                // Store new image
-                $imageName = time() . '.' . $file->extension();
-                $file->storeAs('hero', $imageName, 'public');
+                $imageName = time() . '.' . $request->image->extension();
+                $request->image->storeAs('hero', $imageName, 'public');
                 $data['image'] = 'hero/' . $imageName;
-
-                Log::debug('New image stored:', ['new_path' => $data['image']]);
-            } else {
-                Log::debug('No new image provided, retaining existing image:', ['image' => $data['image']]);
             }
 
-            // Enable query logging
-            DB::enableQueryLog();
-
-            // Update using mass assignment
-            $updated = $hero->update($data);
-
-            $queries = DB::getQueryLog();
-            DB::disableQueryLog();
-
-            Log::debug('Hero section update result:', [
-                'id' => $hero->id,
-                'updated' => $updated,
-                'data' => $data,
-                'attributes_after' => $hero->fresh()->getAttributes(),
-                'queries' => $queries,
-            ]);
-
-            if (!$updated) {
-                Log::error('Hero section update failed: No changes applied', [
-                    'id' => $id,
-                    'data' => $data,
-                ]);
-                return back()->with('error', 'Failed to update hero section: No changes applied.');
-            }
+            $hero->update($data);
 
             return redirect()->route('admin.hero.index')->with('success', 'Hero section updated successfully.');
         } catch (ValidationException $e) {
@@ -143,9 +114,8 @@ class HeroSectionController extends Controller
             Log::error('Update hero section failed:', [
                 'id' => $id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
-            return back()->with('error', 'Failed to update hero section: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update hero section.');
         }
     }
 
@@ -153,12 +123,12 @@ class HeroSectionController extends Controller
     {
         try {
             $hero = HeroSection::findOrFail($id);
+
             if ($hero->image) {
                 Storage::disk('public')->delete($hero->image);
             }
-            $hero->delete();
 
-            Log::debug('Hero section deleted:', ['id' => $id]);
+            $hero->delete();
 
             return redirect()->route('admin.hero.index')->with('success', 'Hero section deleted successfully.');
         } catch (\Exception $e) {
@@ -174,12 +144,10 @@ class HeroSectionController extends Controller
             $hero->is_active = !$hero->is_active;
             $hero->save();
 
-            Log::debug('Hero section active status toggled:', [
-                'id' => $id,
-                'is_active' => $hero->is_active,
-            ]);
+            $message = $hero->is_active
+                ? 'Hero section activated successfully.'
+                : 'Hero section deactivated successfully.';
 
-            $message = $hero->is_active ? 'Hero section activated successfully.' : 'Hero section deactivated successfully.';
             return redirect()->route('admin.hero.index')->with('success', $message);
         } catch (\Exception $e) {
             Log::error('Toggle hero section active status failed:', ['error' => $e->getMessage()]);

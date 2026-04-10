@@ -1,19 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import {
     LayoutDashboard,
     Users,
-    CalendarCheck2,
-    BrainCircuit,
-    LineChart,
-    ClipboardList,
-    Moon,
+    Mail,
+    Image as ImageIcon,
+    Home,
     Sun,
-    Languages,
-    LogOut,
+    Moon,
     Menu,
     X,
+    LogOut,
+    Languages,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
+
+const BRAND = {
+    primary: "#7aa7bb",
+    primaryDark: "#6797ab",
+    bgLight: "#f5f8fb",
+    bgDark: "#0c1420",
+};
 
 export default function AdminLayout({
     title = "Dashboard",
@@ -21,22 +29,32 @@ export default function AdminLayout({
     auth = null,
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [darkMode, setDarkMode] = useState(
-        localStorage.getItem("darkMode") === "true",
-    );
-    const [locale, setLocale] = useState(
-        localStorage.getItem("mindgate_locale") || "en",
-    );
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return localStorage.getItem("admin_sidebar_collapsed") === "true";
+    });
+
+    const [darkMode, setDarkMode] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return localStorage.getItem("darkMode") === "true";
+    });
+
+    const [locale, setLocale] = useState(() => {
+        if (typeof window === "undefined") return "en";
+        return localStorage.getItem("mindgate_locale") || "en";
+    });
 
     useEffect(() => {
         localStorage.setItem("darkMode", darkMode ? "true" : "false");
-
-        if (darkMode) {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
+        document.documentElement.classList.toggle("dark", darkMode);
     }, [darkMode]);
+
+    useEffect(() => {
+        localStorage.setItem(
+            "admin_sidebar_collapsed",
+            sidebarCollapsed ? "true" : "false",
+        );
+    }, [sidebarCollapsed]);
 
     useEffect(() => {
         localStorage.setItem("mindgate_locale", locale);
@@ -45,20 +63,19 @@ export default function AdminLayout({
     }, [locale]);
 
     const isArabic = locale === "ar";
+    const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "";
 
     const t = useMemo(
         () => ({
+            panel: isArabic ? "لوحة الإدارة" : "Admin Panel",
             dashboard: isArabic ? "لوحة التحكم" : "Dashboard",
-            overview: isArabic ? "نظرة عامة" : "Overview",
             users: isArabic ? "المستخدمون" : "Users",
-            appointments: isArabic ? "المواعيد" : "Appointments",
-            assessments: isArabic ? "التقييمات" : "Assessments",
-            analytics: isArabic ? "التحليلات" : "Analytics",
-            reports: isArabic ? "التقارير" : "Reports",
-            logout: isArabic ? "تسجيل الخروج" : "Logout",
-            welcome: isArabic ? "مرحباً" : "Welcome",
-            adminPanel: isArabic ? "لوحة الإدارة" : "Admin Panel",
+            messages: isArabic ? "الرسائل" : "Messages",
+            hero: isArabic ? "الهيرو" : "Hero Sections",
             home: isArabic ? "الرئيسية" : "Home",
+            logout: isArabic ? "تسجيل الخروج" : "Logout",
+            lang: isArabic ? "EN" : "AR",
             dark: isArabic ? "داكن" : "Dark",
             light: isArabic ? "فاتح" : "Light",
         }),
@@ -67,64 +84,87 @@ export default function AdminLayout({
 
     const navItems = [
         {
-            label: t.overview,
-            icon: LayoutDashboard,
+            label: t.dashboard,
             href: route("admin.dashboard"),
-            active: true,
+            icon: LayoutDashboard,
         },
         {
             label: t.users,
+            href: route("admin.users.index"),
             icon: Users,
-            href: "#",
-            active: false,
         },
         {
-            label: t.appointments,
-            icon: CalendarCheck2,
-            href: "#",
-            active: false,
+            label: t.messages,
+            href: route("admin.messages"),
+            icon: Mail,
         },
         {
-            label: t.assessments,
-            icon: BrainCircuit,
-            href: "#",
-            active: false,
-        },
-        {
-            label: t.analytics,
-            icon: LineChart,
-            href: "#",
-            active: false,
-        },
-        {
-            label: t.reports,
-            icon: ClipboardList,
-            href: "#",
-            active: false,
+            label: t.hero,
+            href: route("admin.hero.index"),
+            icon: ImageIcon,
         },
     ];
+
+    const doLogout = () => {
+        router.post(route("admin.logout"));
+    };
+
+    const SidebarLinks = ({ compact = false }) => (
+        <div className="space-y-2">
+            {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const pathname =
+                    typeof window !== "undefined"
+                        ? new URL(item.href, window.location.origin).pathname
+                        : "";
+
+                const active = currentPath === pathname;
+
+                return (
+                    <Link
+                        key={index}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-200 ${
+                            compact ? "justify-center" : ""
+                        } ${
+                            active
+                                ? "bg-[#7aa7bb] text-white shadow-lg shadow-[#7aa7bb]/20"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                        }`}
+                        title={compact ? item.label : undefined}
+                    >
+                        <Icon size={18} />
+                        {!compact && <span>{item.label}</span>}
+                    </Link>
+                );
+            })}
+        </div>
+    );
 
     return (
         <div
             dir={isArabic ? "rtl" : "ltr"}
-            className="min-h-screen bg-[#f5f8fb] text-slate-800 dark:bg-[#0f1720] dark:text-slate-100"
+            className="min-h-screen"
+            style={{
+                backgroundColor: darkMode ? BRAND.bgDark : BRAND.bgLight,
+            }}
         >
             <Head title={`${title} - Mind Gate`} />
 
             <div className="flex min-h-screen">
-                {/* Sidebar Overlay Mobile */}
                 {sidebarOpen && (
                     <button
                         type="button"
-                        aria-label="close sidebar"
-                        className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] lg:hidden"
+                        className="fixed inset-0 z-40 bg-slate-900/45 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
-                {/* Sidebar */}
                 <aside
-                    className={`fixed top-0 z-50 h-screen w-[280px] border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-[#111827]/95 lg:static lg:z-auto lg:translate-x-0 lg:border-l ${
+                    className={`fixed top-0 z-50 h-screen border-e border-slate-200 bg-white/95 shadow-2xl backdrop-blur-xl transition-all duration-300 dark:border-slate-800 dark:bg-[#101826]/95 lg:static lg:z-auto ${
+                        sidebarCollapsed ? "w-[92px]" : "w-[280px]"
+                    } ${
                         isArabic
                             ? sidebarOpen
                                 ? "right-0"
@@ -132,71 +172,98 @@ export default function AdminLayout({
                             : sidebarOpen
                               ? "left-0"
                               : "left-[-320px]"
-                    }`}
+                    } lg:translate-x-0`}
                 >
                     <div className="flex h-full flex-col">
-                        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5 dark:border-slate-800">
-                            <div>
-                                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                                    Mind Gate
-                                </h2>
-                                <p className="text-xs font-medium text-[#7aa7bb]">
-                                    {t.adminPanel}
-                                </p>
+                        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-5 dark:border-slate-800">
+                            <div
+                                className={`flex items-center gap-3 ${
+                                    sidebarCollapsed
+                                        ? "justify-center w-full"
+                                        : ""
+                                }`}
+                            >
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Mind Gate"
+                                    className="h-12 w-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                    }}
+                                />
+
+                                {!sidebarCollapsed && (
+                                    <div>
+                                        <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                                            Mind Gate
+                                        </h2>
+                                        <p className="text-xs font-medium text-[#7aa7bb]">
+                                            {t.panel}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
-                            <button
-                                type="button"
-                                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <X size={18} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
+                                    onClick={() => setSidebarOpen(false)}
+                                >
+                                    <X size={18} />
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="hidden lg:inline-flex rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                    onClick={() =>
+                                        setSidebarCollapsed((prev) => !prev)
+                                    }
+                                >
+                                    {sidebarCollapsed ? (
+                                        <ChevronRight size={18} />
+                                    ) : (
+                                        <ChevronLeft size={18} />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-4 py-5">
-                            <nav className="space-y-2">
-                                {navItems.map((item, index) => {
-                                    const Icon = item.icon;
-
-                                    return (
-                                        <Link
-                                            key={index}
-                                            href={item.href}
-                                            className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all ${
-                                                item.active
-                                                    ? "bg-[#7aa7bb] text-white shadow-lg shadow-[#7aa7bb]/30"
-                                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                                            }`}
-                                        >
-                                            <Icon size={18} />
-                                            <span>{item.label}</span>
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
+                            <SidebarLinks compact={sidebarCollapsed} />
                         </div>
 
                         <div className="border-t border-slate-200 p-4 dark:border-slate-800">
                             <Link
-                                href={route("logout")}
-                                method="post"
-                                as="button"
-                                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                href={route("welcome")}
+                                className={`mb-3 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 ${
+                                    sidebarCollapsed ? "px-0" : ""
+                                }`}
+                                title={sidebarCollapsed ? t.home : undefined}
+                            >
+                                <Home size={16} />
+                                {!sidebarCollapsed && <span>{t.home}</span>}
+                            </Link>
+
+                            <button
+                                type="button"
+                                onClick={doLogout}
+                                className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 ${
+                                    sidebarCollapsed ? "px-0" : ""
+                                }`}
+                                title={sidebarCollapsed ? t.logout : undefined}
                             >
                                 <LogOut size={16} />
-                                {t.logout}
-                            </Link>
+                                {!sidebarCollapsed && <span>{t.logout}</span>}
+                            </button>
                         </div>
                     </div>
                 </aside>
 
-                {/* Main */}
                 <div className="flex min-h-screen flex-1 flex-col">
-                    {/* Topbar */}
-                    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-[#111827]/80">
+                    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-[#101826]/80">
                         <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
                                 <button
                                     type="button"
                                     className="rounded-2xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 lg:hidden"
@@ -205,12 +272,12 @@ export default function AdminLayout({
                                     <Menu size={18} />
                                 </button>
 
-                                <div>
-                                    <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                                <div className="min-w-0">
+                                    <h1 className="text-xl font-extrabold text-slate-900 dark:text-white truncate">
                                         {title}
                                     </h1>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        {t.dashboard}
+                                        Mind Gate Admin Experience
                                     </p>
                                 </div>
                             </div>
@@ -224,7 +291,7 @@ export default function AdminLayout({
                                     className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:text-sm"
                                 >
                                     <Languages size={15} />
-                                    {isArabic ? "EN" : "AR"}
+                                    {t.lang}
                                 </button>
 
                                 <button
@@ -244,18 +311,10 @@ export default function AdminLayout({
                                         </>
                                     )}
                                 </button>
-
-                                <Link
-                                    href="/"
-                                    className="rounded-2xl bg-[#7aa7bb] px-4 py-2 text-xs font-bold text-white shadow-md shadow-[#7aa7bb]/25 transition hover:bg-[#6797ab] sm:text-sm"
-                                >
-                                    {t.home}
-                                </Link>
                             </div>
                         </div>
                     </header>
 
-                    {/* Page Content */}
                     <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
                         {children}
                     </main>

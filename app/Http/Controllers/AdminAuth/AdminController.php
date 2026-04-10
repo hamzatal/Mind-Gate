@@ -9,8 +9,8 @@ use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AdminController extends Controller
@@ -18,12 +18,17 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = User::select('id', 'name', 'email', 'is_active', 'created_at')
-                ->latest();
+            $query = User::select([
+                'id',
+                'full_name as name',
+                'email',
+                'is_active',
+                'created_at',
+            ])->latest('created_at');
 
             if ($search = $request->input('search')) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
+                    $q->where('full_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             }
@@ -33,8 +38,17 @@ class AdminController extends Controller
             }
 
             $users = $query->paginate(10)->withQueryString();
+            $admin = Auth::guard('admin')->user();
 
             return Inertia::render('Admin/Users', [
+                'auth' => [
+                    'user' => [
+                        'id' => $admin->id,
+                        'name' => $admin->name,
+                        'email' => $admin->email,
+                        'avatar' => null,
+                    ],
+                ],
                 'users' => $users,
                 'flash' => [
                     'success' => session('success'),
@@ -52,27 +66,32 @@ class AdminController extends Controller
         try {
             $admin = Auth::guard('admin')->user();
             $isAdmin = Admin::where('id', $id)->exists();
+
             if ($isAdmin && $id == $admin->id) {
                 return back()->with('error', 'You cannot deactivate your own admin account.');
             }
 
             $user = User::findOrFail($id);
             $user->is_active = !$user->is_active;
-            $user->deactivated_at = $user->is_active ? null : now();
-            $user->deactivation_reason = $user->is_active ? null : 'Deactivated by admin';
             $user->save();
 
             if (!$user->is_active) {
-                \Illuminate\Support\Facades\DB::table('sessions')
+                DB::table('sessions')
                     ->where('user_id', $user->id)
                     ->delete();
             }
 
             $status = $user->is_active ? 'activated' : 'deactivated';
-            Log::info("User {$user->id} $status by admin {$admin->id}");
-            return redirect()->route('admin.users.index')->with('success', "User $status successfully");
+
+            Log::info("User {$user->id} {$status} by admin {$admin->id}");
+
+            return redirect()->route('admin.users.index')->with('success', "User {$status} successfully");
         } catch (\Exception $e) {
-            Log::error('Failed to toggle user status:', ['user_id' => $id, 'error' => $e->getMessage()]);
+            Log::error('Failed to toggle user status:', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
             return back()->with('error', 'Failed to toggle user status.');
         }
     }
@@ -80,20 +99,37 @@ class AdminController extends Controller
     public function showContacts(Request $request)
     {
         try {
-            $query = Contact::select('id', 'name', 'email', 'subject', 'message', 'created_at', 'is_read')
-                ->orderBy('created_at', 'desc');
+            $query = Contact::select([
+                'id',
+                'name',
+                'email',
+                'subject',
+                'message',
+                'created_at',
+                'is_read',
+            ])->orderBy('created_at', 'desc');
 
             if ($search = $request->input('search')) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('subject', 'like', "%{$search}%");
+                        ->orWhere('subject', 'like', "%{$search}%")
+                        ->orWhere('message', 'like', "%{$search}%");
                 });
             }
 
             $messages = $query->paginate(10)->withQueryString();
+            $admin = Auth::guard('admin')->user();
 
             return Inertia::render('Admin/ContactsView', [
+                'auth' => [
+                    'user' => [
+                        'id' => $admin->id,
+                        'name' => $admin->name,
+                        'email' => $admin->email,
+                        'avatar' => null,
+                    ],
+                ],
                 'messages' => $messages,
                 'flash' => [
                     'success' => session('success'),
@@ -113,10 +149,13 @@ class AdminController extends Controller
             $contact->is_read = true;
             $contact->save();
 
-            Log::info("Message {$id} marked as read by admin " . Auth::guard('admin')->id());
-            return redirect()->route('admin.contacts')->with('success', 'Message marked as read successfully');
+            return redirect()->route('admin.messages')->with('success', 'Message marked as read successfully');
         } catch (\Exception $e) {
-            Log::error('Failed to mark message as read:', ['contact_id' => $id, 'error' => $e->getMessage()]);
+            Log::error('Failed to mark message as read:', [
+                'contact_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
             return back()->with('error', 'Failed to mark message as read.');
         }
     }
@@ -131,7 +170,7 @@ class AdminController extends Controller
                     'id' => $admin->id,
                     'name' => $admin->name,
                     'email' => $admin->email,
-                    'avatar' => $admin->avatar ? Storage::url($admin->avatar) : null,
+                    'avatar' => null,
                     'created_at' => $admin->created_at,
                     'updated_at' => $admin->updated_at,
                 ],
@@ -154,21 +193,12 @@ class AdminController extends Controller
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255', 'unique:admins,email,' . $admin->id],
-                'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             ]);
 
-            if ($request->hasFile('avatar')) {
-                if ($admin->avatar) {
-                    Storage::disk('public')->delete($admin->avatar);
-                }
-                $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
-            } else {
-                unset($validated['avatar']);
-            }
+            $admin->name = $validated['name'];
+            $admin->email = $validated['email'];
+            $admin->save();
 
-            $admin->update($validated);
-
-            Log::info("Admin {$admin->id} updated profile", ['admin_id' => $admin->id]);
             return redirect()->route('admin.profile')->with('success', 'Profile updated successfully');
         } catch (\Exception $e) {
             Log::error('Failed to update admin profile:', ['error' => $e->getMessage()]);
@@ -194,7 +224,6 @@ class AdminController extends Controller
                 'password' => Hash::make($validated['new_password']),
             ]);
 
-            Log::info("Admin {$admin->id} updated password", ['admin_id' => $admin->id]);
             return redirect()->route('admin.profile')->with('success', 'Password updated successfully');
         } catch (\Exception $e) {
             Log::error('Failed to update admin password:', ['error' => $e->getMessage()]);
