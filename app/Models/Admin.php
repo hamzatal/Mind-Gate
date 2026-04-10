@@ -11,7 +11,6 @@ class Admin extends Authenticatable
         'email',
         'password',
         'avatar',
-        'last_login',
     ];
 
     protected $hidden = [
@@ -20,7 +19,6 @@ class Admin extends Authenticatable
     ];
 
     protected $casts = [
-        'last_login' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

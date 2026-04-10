@@ -5,7 +5,6 @@ namespace App\Http\Controllers\AdminAuth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Contact;
-use App\Models\Company;
 use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -132,7 +131,6 @@ class AdminController extends Controller
                     'id' => $admin->id,
                     'name' => $admin->name,
                     'email' => $admin->email,
-                    'last_login' => $admin->last_login,
                     'avatar' => $admin->avatar ? Storage::url($admin->avatar) : null,
                     'created_at' => $admin->created_at,
                     'updated_at' => $admin->updated_at,

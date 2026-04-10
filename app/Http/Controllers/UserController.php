@@ -11,9 +11,7 @@ use Exception;
 
 class UserController extends Controller
 {
-    /**
-     * Get all users
-     */
+
     public function index()
     {
         try {
@@ -47,9 +45,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Get a single user by ID
-     */
     public function show($id)
     {
         try {
@@ -86,9 +81,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Update a user by ID
-     */
     public function update(Request $request, $id)
     {
         try {
@@ -145,9 +137,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Delete a user by ID
-     */
     public function destroy($id)
     {
         try {
