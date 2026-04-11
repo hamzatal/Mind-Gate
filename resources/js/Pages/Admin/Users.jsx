@@ -1,257 +1,304 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Search, Mail, Power, Users, Filter } from "lucide-react";
-import AdminLayout from "@/Layouts/AdminLayout";
+import React, { useEffect, useState } from "react";
+import { Head, router, usePage } from "@inertiajs/react";
+import { Search, Power, Users as UsersIcon } from "lucide-react";
+import AdminLayout from "@/Components/AdminLayout";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-function FlashBanner({ flash }) {
+function Flash({ flash, dark }) {
     if (!flash?.success && !flash?.error) return null;
 
-    const isError = !!flash.error;
-    const text = flash.error || flash.success;
-
     return (
-        <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                isError
-                    ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
-            }`}
-        >
-            {text}
+        <div className="mb-6 space-y-3">
+            {flash.success && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                >
+                    {flash.success}
+                </div>
+            )}
+
+            {flash.error && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-red-500/20 bg-red-500/10 text-red-300"
+                            : "border-red-200 bg-red-50 text-red-700"
+                    }`}
+                >
+                    {flash.error}
+                </div>
+            )}
         </div>
     );
 }
 
-export default function AdminUsers({ auth, users }) {
+export default function Users() {
     const { props } = usePage();
+    const { isDark, isArabic } = useSitePreferences();
+
+    const users = props.users || {
+        data: [],
+        total: 0,
+        current_page: 1,
+        last_page: 1,
+        from: 0,
+        to: 0,
+    };
     const flash = props.flash || {};
+    const supportsStatusToggle = props.supports_status_toggle ?? true;
+    const filters = props.filters || { search: "", status: "" };
 
-    const locale =
-        typeof window !== "undefined"
-            ? localStorage.getItem("mindgate_locale") || "en"
-            : "en";
-
-    const isArabic = locale === "ar";
-
-    const t = useMemo(
-        () => ({
-            title: isArabic ? "المستخدمون" : "Users",
-            search: isArabic ? "ابحث عن مستخدم..." : "Search users...",
-            all: isArabic ? "الكل" : "All",
-            active: isArabic ? "نشط" : "Active",
-            inactive: isArabic ? "معطل" : "Inactive",
-            user: isArabic ? "المستخدم" : "User",
-            email: isArabic ? "البريد الإلكتروني" : "Email",
-            created: isArabic ? "تاريخ الإنشاء" : "Created",
-            status: isArabic ? "الحالة" : "Status",
-            actions: isArabic ? "الإجراءات" : "Actions",
-            noUsers: isArabic ? "لا يوجد مستخدمون." : "No users found.",
-            activate: isArabic ? "تفعيل" : "Activate",
-            deactivate: isArabic ? "تعطيل" : "Deactivate",
-            results: isArabic ? "عدد النتائج" : "Results",
-        }),
-        [isArabic],
-    );
-
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState("");
-    const toggleForm = useForm({});
-    const rows = users?.data || [];
-    const admin = auth?.user || {};
+    const [search, setSearch] = useState(filters.search || "");
+    const [status, setStatus] = useState(filters.status || "");
 
     useEffect(() => {
         const timer = setTimeout(() => {
             router.get(
                 route("admin.users.index"),
-                { search: searchQuery, status: filterStatus },
-                { preserveState: true, preserveScroll: true, replace: true },
+                { search, status },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
             );
-        }, 320);
+        }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, filterStatus]);
-
-    const toggleUserStatus = (userId) => {
-        toggleForm.post(route("admin.users.toggle-status", userId), {
-            preserveScroll: true,
-        });
-    };
+    }, [search, status]);
 
     return (
-        <AdminLayout title={t.title} auth={auth}>
-            <Head title={`${t.title} - Mind Gate`} />
-            <FlashBanner flash={flash} />
+        <>
+            <Head title="Admin Users - Mind Gate" />
 
-            <div className="space-y-6">
-                <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                        <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-[#7aa7bb]/10 px-3 py-1 text-xs font-extrabold text-[#7aa7bb]">
-                                <Users size={14} />
-                                Mind Gate
+            <AdminLayout
+                title={isArabic ? "إدارة المستخدمين" : "Users Management"}
+                subtitle={
+                    isArabic
+                        ? "عرض المستخدمين والبحث عنهم وتفعيلهم أو تعطيلهم"
+                        : "Browse users, search, and activate or deactivate accounts"
+                }
+            >
+                <Flash flash={flash} dark={isDark} />
+
+                <div
+                    className={`overflow-hidden rounded-3xl border shadow-lg ${
+                        isDark
+                            ? "border-white/10 bg-white/5"
+                            : "border-slate-200 bg-white"
+                    }`}
+                >
+                    <div
+                        className={`flex flex-col gap-4 border-b p-6 lg:flex-row lg:items-center lg:justify-between ${
+                            isDark ? "border-white/10" : "border-slate-200"
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] p-3 text-white">
+                                <UsersIcon className="h-5 w-5" />
                             </div>
-
-                            <h2 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {t.title}
-                            </h2>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                                {t.results}: {users?.total ?? 0}
-                            </p>
+                            <div>
+                                <h2 className="text-xl font-bold">
+                                    {isArabic
+                                        ? "قائمة المستخدمين"
+                                        : "Users List"}
+                                </h2>
+                                <p
+                                    className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                                >
+                                    {users.total || 0}{" "}
+                                    {isArabic ? "مستخدم" : "users"}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-[1fr_180px] xl:w-[520px]">
+                        <div className="grid gap-3 md:grid-cols-[1fr_180px]">
                             <div className="relative">
                                 <Search
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                    size={18}
+                                    className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${
+                                        isDark
+                                            ? "text-white/45"
+                                            : "text-slate-400"
+                                    }`}
                                 />
                                 <input
                                     type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder={
+                                        isArabic
+                                            ? "ابحث بالاسم أو البريد..."
+                                            : "Search by name or email..."
                                     }
-                                    placeholder={t.search}
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                    className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5 text-white placeholder:text-white/35"
+                                            : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+                                    }`}
                                 />
                             </div>
 
-                            <div className="relative">
-                                <Filter
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                    size={16}
-                                />
-                                <select
-                                    value={filterStatus}
-                                    onChange={(e) =>
-                                        setFilterStatus(e.target.value)
-                                    }
-                                    className="w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                >
-                                    <option value="">{t.all}</option>
-                                    <option value="active">{t.active}</option>
-                                    <option value="inactive">
-                                        {t.inactive}
-                                    </option>
-                                </select>
-                            </div>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className={`rounded-2xl border px-4 py-3 outline-none ${
+                                    isDark
+                                        ? "border-white/10 bg-white/5 text-white"
+                                        : "border-slate-200 bg-slate-50 text-slate-900"
+                                }`}
+                            >
+                                <option value="">
+                                    {isArabic ? "كل الحالات" : "All statuses"}
+                                </option>
+                                <option value="active">
+                                    {isArabic ? "نشط" : "Active"}
+                                </option>
+                                <option value="inactive">
+                                    {isArabic ? "معطل" : "Inactive"}
+                                </option>
+                            </select>
                         </div>
                     </div>
-                </section>
 
-                <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                    <div className="hidden xl:block overflow-x-auto">
+                    <div className="overflow-x-auto">
                         <table className="min-w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800">
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.user}
+                            <thead
+                                className={
+                                    isDark ? "bg-white/5" : "bg-slate-50"
+                                }
+                            >
+                                <tr>
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                                        {isArabic ? "المستخدم" : "User"}
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.email}
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                                        {isArabic ? "الحالة" : "Status"}
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.created}
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                                        {isArabic ? "التاريخ" : "Created"}
                                     </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.status}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.actions}
+                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                                        {isArabic ? "الإجراء" : "Action"}
                                     </th>
                                 </tr>
                             </thead>
 
-                            <tbody>
-                                {rows.length > 0 ? (
-                                    rows.map((user) => (
-                                        <tr
-                                            key={user.id}
-                                            className="border-b border-slate-100 transition hover:bg-slate-50/80 dark:border-slate-800 dark:hover:bg-slate-900/60"
-                                        >
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] font-bold text-white">
-                                                        {(user.name || "?")
+                            <tbody
+                                className={
+                                    isDark
+                                        ? "divide-y divide-white/10"
+                                        : "divide-y divide-slate-200"
+                                }
+                            >
+                                {users.data?.length ? (
+                                    users.data.map((item) => (
+                                        <tr key={item.id}>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] font-bold text-white">
+                                                        {(item.name || "?")
                                                             .charAt(0)
                                                             .toUpperCase()}
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <p className="truncate font-bold text-slate-900 dark:text-white">
-                                                            {user.name ||
-                                                                "Unknown User"}
+                                                    <div>
+                                                        <p className="font-semibold">
+                                                            {item.name ||
+                                                                "Unknown"}
                                                         </p>
-                                                        <p className="text-xs text-slate-400">
-                                                            ID: {user.id}
+                                                        <p
+                                                            className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                                                        >
+                                                            {item.email ||
+                                                                "No email"}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </td>
 
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                                                    <Mail size={14} />
-                                                    {user.email || "No email"}
-                                                </div>
-                                            </td>
-
-                                            <td className="px-6 py-5 text-sm text-slate-500 dark:text-slate-400">
-                                                {user.created_at
-                                                    ? new Date(
-                                                          user.created_at,
-                                                      ).toLocaleDateString()
-                                                    : "-"}
-                                            </td>
-
-                                            <td className="px-6 py-5">
+                                            <td className="px-6 py-4">
                                                 <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                                        user.is_active
-                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        item.is_active
+                                                            ? "bg-emerald-500/15 text-emerald-400"
+                                                            : "bg-red-500/15 text-red-400"
                                                     }`}
                                                 >
-                                                    {user.is_active
-                                                        ? t.active
-                                                        : t.inactive}
+                                                    {item.is_active
+                                                        ? isArabic
+                                                            ? "نشط"
+                                                            : "Active"
+                                                        : isArabic
+                                                          ? "معطل"
+                                                          : "Inactive"}
                                                 </span>
                                             </td>
 
-                                            <td className="px-6 py-5">
-                                                <button
-                                                    onClick={() =>
-                                                        toggleUserStatus(
-                                                            user.id,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        user.id === admin.id ||
-                                                        toggleForm.processing
-                                                    }
-                                                    className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition ${
-                                                        user.is_active
-                                                            ? user.id ===
-                                                              admin.id
-                                                                ? "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500"
-                                                                : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400"
-                                                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                                    }`}
-                                                >
-                                                    <Power size={14} />
-                                                    {user.is_active
-                                                        ? t.deactivate
-                                                        : t.activate}
-                                                </button>
+                                            <td className="px-6 py-4 text-sm">
+                                                {item.created_at
+                                                    ? new Date(
+                                                          item.created_at,
+                                                      ).toLocaleDateString()
+                                                    : "—"}
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                {supportsStatusToggle ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                route(
+                                                                    "admin.users.toggle-status",
+                                                                    item.id,
+                                                                ),
+                                                                {},
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                        className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${
+                                                            item.is_active
+                                                                ? "bg-red-500/10 text-red-400 hover:bg-red-500/15"
+                                                                : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+                                                        }`}
+                                                    >
+                                                        <Power className="h-4 w-4" />
+                                                        {item.is_active
+                                                            ? isArabic
+                                                                ? "تعطيل"
+                                                                : "Deactivate"
+                                                            : isArabic
+                                                              ? "تفعيل"
+                                                              : "Activate"}
+                                                    </button>
+                                                ) : (
+                                                    <span
+                                                        className={`text-sm ${isDark ? "text-white/55" : "text-slate-500"}`}
+                                                    >
+                                                        —
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan="5"
-                                            className="px-6 py-12 text-center text-sm text-slate-400"
+                                            colSpan="4"
+                                            className={`px-6 py-16 text-center text-sm ${
+                                                isDark
+                                                    ? "text-white/60"
+                                                    : "text-slate-500"
+                                            }`}
                                         >
-                                            {t.noUsers}
+                                            {isArabic
+                                                ? "لا يوجد مستخدمون مطابقون."
+                                                : "No matching users found."}
                                         </td>
                                     </tr>
                                 )}
@@ -259,86 +306,75 @@ export default function AdminUsers({ auth, users }) {
                         </table>
                     </div>
 
-                    <div className="grid gap-4 p-4 xl:hidden">
-                        {rows.length > 0 ? (
-                            rows.map((user) => (
-                                <div
-                                    key={user.id}
-                                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] font-bold text-white">
-                                                {(user.name || "?")
-                                                    .charAt(0)
-                                                    .toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-900 dark:text-white">
-                                                    {user.name ||
-                                                        "Unknown User"}
-                                                </p>
-                                                <p className="text-xs text-slate-400">
-                                                    ID: {user.id}
-                                                </p>
-                                            </div>
-                                        </div>
+                    <div
+                        className={`flex flex-col gap-4 border-t px-6 py-4 md:flex-row md:items-center md:justify-between ${
+                            isDark ? "border-white/10" : "border-slate-200"
+                        }`}
+                    >
+                        <p
+                            className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                        >
+                            {isArabic
+                                ? `عرض ${users.from || 0} إلى ${users.to || 0} من ${users.total || 0}`
+                                : `Showing ${users.from || 0} to ${users.to || 0} of ${users.total || 0}`}
+                        </p>
 
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                                user.is_active
-                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-                                            }`}
-                                        >
-                                            {user.is_active
-                                                ? t.active
-                                                : t.inactive}
-                                        </span>
-                                    </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                disabled={users.current_page <= 1}
+                                onClick={() =>
+                                    router.get(
+                                        route("admin.users.index"),
+                                        {
+                                            search,
+                                            status,
+                                            page: users.current_page - 1,
+                                        },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
+                                    )
+                                }
+                                className={`rounded-2xl px-4 py-2 text-sm font-semibold disabled:opacity-40 ${
+                                    isDark
+                                        ? "bg-white/5 text-white"
+                                        : "bg-slate-100 text-slate-700"
+                                }`}
+                            >
+                                {isArabic ? "السابق" : "Previous"}
+                            </button>
 
-                                    <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                                        <div>{user.email || "No email"}</div>
-                                        <div>
-                                            {user.created_at
-                                                ? new Date(
-                                                      user.created_at,
-                                                  ).toLocaleDateString()
-                                                : "-"}
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={() =>
-                                            toggleUserStatus(user.id)
-                                        }
-                                        disabled={
-                                            user.id === admin.id ||
-                                            toggleForm.processing
-                                        }
-                                        className={`mt-4 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition ${
-                                            user.is_active
-                                                ? user.id === admin.id
-                                                    ? "cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500"
-                                                    : "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-500/10 dark:text-rose-400"
-                                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                        }`}
-                                    >
-                                        <Power size={14} />
-                                        {user.is_active
-                                            ? t.deactivate
-                                            : t.activate}
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="rounded-3xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
-                                {t.noUsers}
-                            </div>
-                        )}
+                            <button
+                                type="button"
+                                disabled={users.current_page >= users.last_page}
+                                onClick={() =>
+                                    router.get(
+                                        route("admin.users.index"),
+                                        {
+                                            search,
+                                            status,
+                                            page: users.current_page + 1,
+                                        },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
+                                    )
+                                }
+                                className={`rounded-2xl px-4 py-2 text-sm font-semibold disabled:opacity-40 ${
+                                    isDark
+                                        ? "bg-white/5 text-white"
+                                        : "bg-slate-100 text-slate-700"
+                                }`}
+                            >
+                                {isArabic ? "التالي" : "Next"}
+                            </button>
+                        </div>
                     </div>
-                </section>
-            </div>
-        </AdminLayout>
+                </div>
+            </AdminLayout>
+        </>
     );
 }

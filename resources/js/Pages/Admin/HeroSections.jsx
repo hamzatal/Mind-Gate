@@ -1,152 +1,191 @@
 import React, { useMemo, useState } from "react";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
-    Search,
-    Plus,
-    Pencil,
-    Trash2,
-    X,
-    ToggleLeft,
-    ToggleRight,
     Image as ImageIcon,
+    Plus,
+    Search,
+    Edit3,
+    Trash2,
+    Power,
+    X,
 } from "lucide-react";
-import AdminLayout from "@/Layouts/AdminLayout";
+import AdminLayout from "@/Components/AdminLayout";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-function FlashBanner({ flash }) {
+function Flash({ flash, dark }) {
     if (!flash?.success && !flash?.error) return null;
 
-    const isError = !!flash.error;
-    const text = flash.error || flash.success;
-
     return (
-        <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                isError
-                    ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
-            }`}
-        >
-            {text}
+        <div className="mb-6 space-y-3">
+            {flash.success && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                >
+                    {flash.success}
+                </div>
+            )}
+
+            {flash.error && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-red-500/20 bg-red-500/10 text-red-300"
+                            : "border-red-200 bg-red-50 text-red-700"
+                    }`}
+                >
+                    {flash.error}
+                </div>
+            )}
         </div>
     );
 }
 
-export default function HeroSections({ auth, heroSections = [] }) {
+export default function HeroSections() {
     const { props } = usePage();
+    const { isDark, isArabic } = useSitePreferences();
+
     const flash = props.flash || {};
+    const rawSections =
+        props.sections ||
+        props.heroSections ||
+        props.hero_sections ||
+        props.items ||
+        [];
 
-    const locale =
-        typeof window !== "undefined"
-            ? localStorage.getItem("mindgate_locale") || "en"
-            : "en";
+    const sections = Array.isArray(rawSections?.data)
+        ? rawSections.data
+        : rawSections;
 
-    const isArabic = locale === "ar";
-
-    const t = useMemo(
-        () => ({
-            title: isArabic ? "الهيرو" : "Hero Sections",
-            search: isArabic ? "ابحث في الهيرو..." : "Search hero sections...",
-            add: isArabic ? "إضافة قسم" : "Add section",
-            edit: isArabic ? "تعديل القسم" : "Edit section",
-            create: isArabic ? "حفظ القسم" : "Create section",
-            update: isArabic ? "تحديث القسم" : "Update section",
-            delete: isArabic ? "حذف" : "Delete",
-            cancel: isArabic ? "إلغاء" : "Cancel",
-            titleField: isArabic ? "العنوان" : "Title",
-            subtitleField: isArabic ? "الوصف" : "Subtitle",
-            imageField: isArabic ? "الصورة" : "Image",
-            optional: isArabic ? "اختياري" : "Optional",
-            noItems: isArabic
-                ? "لا توجد أقسام هيرو."
-                : "No hero sections found.",
-            active: isArabic ? "نشط" : "Active",
-            inactive: isArabic ? "معطل" : "Inactive",
-            addImageRequired: isArabic
-                ? "الصورة مطلوبة عند الإضافة."
-                : "Image is required when creating.",
-            untitled: isArabic ? "بدون عنوان" : "Untitled",
-            noSubtitle: isArabic ? "بدون وصف" : "No subtitle",
-        }),
-        [isArabic],
-    );
-
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showModal, setShowModal] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
+    const [search, setSearch] = useState("");
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedSection, setSelectedSection] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const createForm = useForm({
         title: "",
         subtitle: "",
         image: null,
     });
 
-    const filtered = heroSections.filter((item) => {
-        const q = searchQuery.toLowerCase().trim();
-        if (!q) return true;
+    const editForm = useForm({
+        title: "",
+        subtitle: "",
+        image: null,
+    });
 
+    const t = useMemo(
+        () => ({
+            add: isArabic ? "إضافة شريحة جديدة" : "Add Hero Section",
+            title: isArabic ? "العنوان" : "Title",
+            subtitle: isArabic ? "العنوان الفرعي" : "Subtitle",
+            image: isArabic ? "الصورة" : "Image",
+            save: isArabic ? "حفظ" : "Save",
+            update: isArabic ? "تحديث" : "Update",
+            cancel: isArabic ? "إلغاء" : "Cancel",
+            delete: isArabic ? "حذف" : "Delete",
+            search: isArabic ? "ابحث عن شريحة..." : "Search hero sections...",
+            active: isArabic ? "نشطة" : "Active",
+            inactive: isArabic ? "معطلة" : "Inactive",
+            confirmDelete: isArabic ? "تأكيد الحذف" : "Confirm Deletion",
+            noItems: isArabic
+                ? "لا توجد شرائح هيرو."
+                : "No hero sections found.",
+        }),
+        [isArabic],
+    );
+
+    const filteredSections = sections.filter((item) => {
+        const q = search.toLowerCase();
         return (
-            (item.title || "").toLowerCase().includes(q) ||
-            (item.subtitle || "").toLowerCase().includes(q)
+            item.title?.toLowerCase().includes(q) ||
+            item.subtitle?.toLowerCase().includes(q)
         );
     });
 
-    const openCreate = () => {
-        setEditingItem(null);
-        reset();
-        setImagePreview(null);
-        setShowModal(true);
+    const normalizeImage = (value) => {
+        if (!value) return null;
+        if (
+            value.startsWith("http://") ||
+            value.startsWith("https://") ||
+            value.startsWith("/storage")
+        ) {
+            return value;
+        }
+        return `/storage/${value}`;
     };
 
-    const openEdit = (item) => {
-        setEditingItem(item);
-        setData({
-            title: item.title || "",
-            subtitle: item.subtitle || "",
+    const resetCreate = () => {
+        createForm.reset();
+        createForm.clearErrors();
+        setImagePreview(null);
+    };
+
+    const handleCreateImage = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        createForm.setData("image", file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const handleEditImage = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        editForm.setData("image", file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const openEdit = (section) => {
+        setSelectedSection(section);
+        editForm.setData({
+            title: section.title || "",
+            subtitle: section.subtitle || "",
             image: null,
         });
-        setImagePreview(item.image || null);
-        setShowModal(true);
+        setImagePreview(normalizeImage(section.image));
+        setShowEditModal(true);
     };
 
-    const closeModal = () => {
-        setEditingItem(null);
-        reset();
-        setImagePreview(null);
-        setShowModal(false);
+    const openDelete = (section) => {
+        setSelectedSection(section);
+        setShowDeleteModal(true);
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0] || null;
-        setData("image", file);
-        setImagePreview(
-            file ? URL.createObjectURL(file) : editingItem?.image || null,
-        );
-    };
-
-    const submit = (e) => {
+    const submitCreate = (e) => {
         e.preventDefault();
 
-        if (!editingItem && !data.image) {
-            return;
-        }
-
-        if (editingItem) {
-            post(route("admin.hero.update", editingItem.id), {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: closeModal,
-            });
-        } else {
-            post(route("admin.hero.store"), {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: closeModal,
-            });
-        }
+        createForm.post(route("admin.hero.store"), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowAddModal(false);
+                resetCreate();
+            },
+        });
     };
 
-    const toggleStatus = (id) => {
+    const submitEdit = (e) => {
+        e.preventDefault();
+
+        if (!selectedSection) return;
+
+        editForm.post(route("admin.hero.update", selectedSection.id), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowEditModal(false);
+                setSelectedSection(null);
+                setImagePreview(null);
+            },
+        });
+    };
+
+    const toggleActive = (id) => {
         router.patch(
             route("admin.hero.toggle", id),
             {},
@@ -154,271 +193,498 @@ export default function HeroSections({ auth, heroSections = [] }) {
         );
     };
 
-    const deleteItem = (id) => {
-        router.delete(route("admin.hero.delete", id), { preserveScroll: true });
+    const confirmDelete = () => {
+        if (!selectedSection) return;
+
+        router.delete(route("admin.hero.delete", selectedSection.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setSelectedSection(null);
+            },
+        });
     };
 
     return (
-        <AdminLayout title={t.title} auth={auth}>
-            <Head title={`${t.title} - Mind Gate`} />
-            <FlashBanner flash={flash} />
+        <>
+            <Head title="Admin Hero Sections - Mind Gate" />
 
-            <div className="space-y-6">
-                <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                        <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-[#7aa7bb]/10 px-3 py-1 text-xs font-extrabold text-[#7aa7bb]">
-                                <ImageIcon size={14} />
-                                Mind Gate
-                            </div>
+            <AdminLayout
+                title={isArabic ? "إدارة الهيرو سكشن" : "Hero Sections"}
+                subtitle={
+                    isArabic
+                        ? "إضافة وتعديل وتفعيل وحذف شرائح الصفحة الرئيسية"
+                        : "Create, update, activate, and delete homepage hero slides"
+                }
+                actions={
+                    <button
+                        type="button"
+                        onClick={() => setShowAddModal(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-5 py-3 text-sm font-semibold text-white shadow-lg"
+                    >
+                        <Plus className="h-4 w-4" />
+                        {t.add}
+                    </button>
+                }
+            >
+                <Flash flash={flash} dark={isDark} />
 
-                            <h2 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {t.title}
-                            </h2>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row xl:w-[480px]">
-                            <div className="relative flex-1">
-                                <Search
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                    size={18}
-                                />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    placeholder={t.search}
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                />
-                            </div>
-
-                            <button
-                                onClick={openCreate}
-                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7aa7bb] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#6797ab]"
-                            >
-                                <Plus size={16} />
-                                {t.add}
-                            </button>
+                <div
+                    className={`overflow-hidden rounded-3xl border shadow-lg ${
+                        isDark
+                            ? "border-white/10 bg-white/5"
+                            : "border-slate-200 bg-white"
+                    }`}
+                >
+                    <div
+                        className={`border-b p-6 ${
+                            isDark ? "border-white/10" : "border-slate-200"
+                        }`}
+                    >
+                        <div className="relative max-w-md">
+                            <Search
+                                className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${
+                                    isDark ? "text-white/45" : "text-slate-400"
+                                }`}
+                            />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder={t.search}
+                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${
+                                    isDark
+                                        ? "border-white/10 bg-white/5 text-white placeholder:text-white/35"
+                                        : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+                                }`}
+                            />
                         </div>
                     </div>
-                </section>
 
-                <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                    {filtered.length > 0 ? (
-                        filtered.map((item) => (
-                            <div
-                                key={item.id}
-                                className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-[#111827]"
-                            >
-                                <div className="relative h-52 bg-slate-100 dark:bg-slate-900">
-                                    {item.image ? (
-                                        <img
-                                            src={item.image}
-                                            alt={item.title || "Hero"}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex h-full items-center justify-center text-slate-400">
-                                            <ImageIcon size={34} />
-                                        </div>
-                                    )}
-
-                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 py-4">
-                                        <div className="flex items-end justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-lg font-extrabold text-white">
-                                                    {item.title || t.untitled}
-                                                </p>
-                                                <p className="mt-1 line-clamp-1 text-sm text-white/80">
-                                                    {item.subtitle ||
-                                                        t.noSubtitle}
-                                                </p>
+                    <div className="grid gap-5 p-6 md:grid-cols-2 xl:grid-cols-3">
+                        {filteredSections.length ? (
+                            filteredSections.map((section) => (
+                                <div
+                                    key={section.id}
+                                    className={`overflow-hidden rounded-3xl border ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5"
+                                            : "border-slate-200 bg-slate-50"
+                                    }`}
+                                >
+                                    <div
+                                        className={`h-52 ${isDark ? "bg-white/5" : "bg-slate-100"}`}
+                                    >
+                                        {normalizeImage(section.image) ? (
+                                            <img
+                                                src={normalizeImage(
+                                                    section.image,
+                                                )}
+                                                alt={section.title}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center">
+                                                <ImageIcon className="h-10 w-10 text-[#7aa7bb]" />
                                             </div>
+                                        )}
+                                    </div>
 
+                                    <div className="p-5">
+                                        <div className="mb-3 flex items-center justify-between gap-3">
+                                            <h3 className="text-lg font-bold">
+                                                {section.title || "Untitled"}
+                                            </h3>
                                             <span
-                                                className={`rounded-full px-3 py-1 text-[11px] font-bold ${
-                                                    item.is_active
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : "bg-amber-100 text-amber-700"
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    section.is_active
+                                                        ? "bg-emerald-500/15 text-emerald-400"
+                                                        : "bg-red-500/15 text-red-400"
                                                 }`}
                                             >
-                                                {item.is_active
+                                                {section.is_active
                                                     ? t.active
                                                     : t.inactive}
                                             </span>
                                         </div>
+
+                                        <p
+                                            className={`min-h-[56px] text-sm leading-7 ${
+                                                isDark
+                                                    ? "text-white/65"
+                                                    : "text-slate-600"
+                                            }`}
+                                        >
+                                            {section.subtitle || "—"}
+                                        </p>
+
+                                        <div className="mt-5 flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleActive(section.id)
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-2xl bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-500/15"
+                                            >
+                                                <Power className="h-4 w-4" />
+                                                {section.is_active
+                                                    ? isArabic
+                                                        ? "تعطيل"
+                                                        : "Disable"
+                                                    : isArabic
+                                                      ? "تفعيل"
+                                                      : "Enable"}
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    openEdit(section)
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-2xl bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-400 hover:bg-blue-500/15"
+                                            >
+                                                <Edit3 className="h-4 w-4" />
+                                                {isArabic ? "تعديل" : "Edit"}
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    openDelete(section)
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-2xl bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/15"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                {t.delete}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className="flex items-center justify-between gap-3 px-5 py-4">
-                                    <div className="text-xs text-slate-400">
-                                        {item.created_at
-                                            ? new Date(
-                                                  item.created_at,
-                                              ).toLocaleDateString()
-                                            : "-"}
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => openEdit(item)}
-                                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-
-                                        <button
-                                            onClick={() =>
-                                                toggleStatus(item.id)
-                                            }
-                                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
-                                        >
-                                            {item.is_active ? (
-                                                <ToggleRight size={18} />
-                                            ) : (
-                                                <ToggleLeft size={18} />
-                                            )}
-                                        </button>
-
-                                        <button
-                                            onClick={() => deleteItem(item.id)}
-                                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-500/10"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
+                            ))
+                        ) : (
+                            <div
+                                className={`col-span-full rounded-3xl border p-10 text-center ${
+                                    isDark
+                                        ? "border-white/10 bg-white/5 text-white/60"
+                                        : "border-slate-200 bg-slate-50 text-slate-500"
+                                }`}
+                            >
+                                {t.noItems}
                             </div>
-                        ))
-                    ) : (
-                        <div className="col-span-full rounded-3xl border border-dashed border-slate-300 px-4 py-12 text-center text-sm text-slate-400 dark:border-slate-700">
-                            {t.noItems}
-                        </div>
-                    )}
-                </section>
+                        )}
+                    </div>
+                </div>
 
-                {showModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
-                        <div className="w-full max-w-2xl rounded-[32px] border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#111827]">
-                            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800">
-                                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                                    {editingItem ? t.edit : t.add}
-                                </h3>
-
+                {showAddModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                        <div
+                            className={`w-full max-w-2xl rounded-3xl border p-6 shadow-2xl ${
+                                isDark
+                                    ? "border-white/10 bg-[#0b1620] text-white"
+                                    : "border-slate-200 bg-white text-slate-900"
+                            }`}
+                        >
+                            <div className="mb-5 flex items-center justify-between">
+                                <h3 className="text-xl font-bold">{t.add}</h3>
                                 <button
-                                    onClick={closeModal}
-                                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900"
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddModal(false);
+                                        resetCreate();
+                                    }}
                                 >
-                                    <X size={18} />
+                                    <X className="h-5 w-5" />
                                 </button>
                             </div>
 
-                            <form onSubmit={submit} className="space-y-5 p-6">
-                                <div className="grid gap-5 md:grid-cols-2">
-                                    <div>
-                                        <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
-                                            {t.titleField}{" "}
-                                            <span className="text-slate-400">
-                                                ({t.optional})
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.title}
-                                            onChange={(e) =>
-                                                setData("title", e.target.value)
-                                            }
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                        />
-                                        {errors.title && (
-                                            <p className="mt-2 text-xs text-red-500">
-                                                {errors.title}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
-                                            {t.subtitleField}{" "}
-                                            <span className="text-slate-400">
-                                                ({t.optional})
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.subtitle}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "subtitle",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                        />
-                                        {errors.subtitle && (
-                                            <p className="mt-2 text-xs text-red-500">
-                                                {errors.subtitle}
-                                            </p>
-                                        )}
-                                    </div>
+                            <form onSubmit={submitCreate} className="space-y-5">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.title}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={createForm.data.title}
+                                        onChange={(e) =>
+                                            createForm.setData(
+                                                "title",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                    {createForm.errors.title && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {createForm.errors.title}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
-                                        {t.imageField}
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.subtitle}
+                                    </label>
+                                    <textarea
+                                        rows="4"
+                                        value={createForm.data.subtitle}
+                                        onChange={(e) =>
+                                            createForm.setData(
+                                                "subtitle",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 outline-none resize-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                    {createForm.errors.subtitle && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {createForm.errors.subtitle}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.image}
                                     </label>
                                     <input
                                         type="file"
                                         accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                        onChange={handleCreateImage}
                                     />
-                                    {!editingItem && (
-                                        <p className="mt-2 text-xs text-slate-400">
-                                            {t.addImageRequired}
-                                        </p>
+                                    {imagePreview && (
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="mt-3 h-40 w-full rounded-2xl object-cover"
+                                        />
                                     )}
-                                    {errors.image && (
-                                        <p className="mt-2 text-xs text-red-500">
-                                            {errors.image}
+                                    {createForm.errors.image && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {createForm.errors.image}
                                         </p>
                                     )}
                                 </div>
 
-                                {imagePreview && (
-                                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="h-56 w-full object-cover"
-                                        />
-                                    </div>
-                                )}
-
-                                <div className="flex items-center justify-end gap-3">
+                                <div className="flex justify-end gap-3">
                                     <button
                                         type="button"
-                                        onClick={closeModal}
-                                        className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                                        onClick={() => {
+                                            setShowAddModal(false);
+                                            resetCreate();
+                                        }}
+                                        className={`rounded-2xl px-4 py-2.5 font-semibold ${
+                                            isDark
+                                                ? "bg-white/5 text-white"
+                                                : "bg-slate-100 text-slate-800"
+                                        }`}
                                     >
                                         {t.cancel}
                                     </button>
-
                                     <button
                                         type="submit"
-                                        disabled={processing}
-                                        className="rounded-2xl bg-[#7aa7bb] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#6797ab] disabled:opacity-60"
+                                        disabled={createForm.processing}
+                                        className="rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-5 py-2.5 font-semibold text-white shadow-lg disabled:opacity-50"
                                     >
-                                        {editingItem ? t.update : t.create}
+                                        {createForm.processing
+                                            ? "Saving..."
+                                            : t.save}
                                     </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 )}
-            </div>
-        </AdminLayout>
+
+                {showEditModal && selectedSection && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                        <div
+                            className={`w-full max-w-2xl rounded-3xl border p-6 shadow-2xl ${
+                                isDark
+                                    ? "border-white/10 bg-[#0b1620] text-white"
+                                    : "border-slate-200 bg-white text-slate-900"
+                            }`}
+                        >
+                            <div className="mb-5 flex items-center justify-between">
+                                <h3 className="text-xl font-bold">
+                                    {isArabic
+                                        ? "تعديل الشريحة"
+                                        : "Edit Section"}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowEditModal(false);
+                                        setSelectedSection(null);
+                                        setImagePreview(null);
+                                    }}
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={submitEdit} className="space-y-5">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.title}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.data.title}
+                                        onChange={(e) =>
+                                            editForm.setData(
+                                                "title",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                    {editForm.errors.title && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {editForm.errors.title}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.subtitle}
+                                    </label>
+                                    <textarea
+                                        rows="4"
+                                        value={editForm.data.subtitle}
+                                        onChange={(e) =>
+                                            editForm.setData(
+                                                "subtitle",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 outline-none resize-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                    {editForm.errors.subtitle && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {editForm.errors.subtitle}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        {t.image}
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleEditImage}
+                                    />
+                                    {imagePreview && (
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="mt-3 h-40 w-full rounded-2xl object-cover"
+                                        />
+                                    )}
+                                    {editForm.errors.image && (
+                                        <p className="mt-1 text-sm text-red-400">
+                                            {editForm.errors.image}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowEditModal(false);
+                                            setSelectedSection(null);
+                                            setImagePreview(null);
+                                        }}
+                                        className={`rounded-2xl px-4 py-2.5 font-semibold ${
+                                            isDark
+                                                ? "bg-white/5 text-white"
+                                                : "bg-slate-100 text-slate-800"
+                                        }`}
+                                    >
+                                        {t.cancel}
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={editForm.processing}
+                                        className="rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-5 py-2.5 font-semibold text-white shadow-lg disabled:opacity-50"
+                                    >
+                                        {editForm.processing
+                                            ? "Updating..."
+                                            : t.update}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {showDeleteModal && selectedSection && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                        <div
+                            className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
+                                isDark
+                                    ? "border-white/10 bg-[#0b1620] text-white"
+                                    : "border-slate-200 bg-white text-slate-900"
+                            }`}
+                        >
+                            <h3 className="mb-3 text-xl font-bold">
+                                {t.confirmDelete}
+                            </h3>
+                            <p
+                                className={`text-sm leading-7 ${isDark ? "text-white/65" : "text-slate-600"}`}
+                            >
+                                {isArabic
+                                    ? `هل أنت متأكد من حذف الشريحة "${selectedSection.title}"؟`
+                                    : `Are you sure you want to delete "${selectedSection.title}"?`}
+                            </p>
+
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowDeleteModal(false);
+                                        setSelectedSection(null);
+                                    }}
+                                    className={`rounded-2xl px-4 py-2.5 font-semibold ${
+                                        isDark
+                                            ? "bg-white/5 text-white"
+                                            : "bg-slate-100 text-slate-800"
+                                    }`}
+                                >
+                                    {t.cancel}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={confirmDelete}
+                                    className="rounded-2xl bg-red-600 px-5 py-2.5 font-semibold text-white shadow-lg"
+                                >
+                                    {t.delete}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </AdminLayout>
+        </>
     );
 }

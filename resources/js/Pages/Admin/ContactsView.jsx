@@ -1,315 +1,310 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Search, Mail, CheckCircle2, Circle } from "lucide-react";
-import AdminLayout from "@/Layouts/AdminLayout";
+import React, { useEffect, useState } from "react";
+import { Head, router, usePage } from "@inertiajs/react";
+import { Search, MessageSquare, CheckCircle2 } from "lucide-react";
+import AdminLayout from "@/Components/AdminLayout";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-function FlashBanner({ flash }) {
+function Flash({ flash, dark }) {
     if (!flash?.success && !flash?.error) return null;
 
-    const isError = !!flash.error;
-    const text = flash.error || flash.success;
-
     return (
-        <div
-            className={`mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                isError
-                    ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
-            }`}
-        >
-            {text}
+        <div className="mb-6 space-y-3">
+            {flash.success && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                >
+                    {flash.success}
+                </div>
+            )}
+
+            {flash.error && (
+                <div
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                        dark
+                            ? "border-red-500/20 bg-red-500/10 text-red-300"
+                            : "border-red-200 bg-red-50 text-red-700"
+                    }`}
+                >
+                    {flash.error}
+                </div>
+            )}
         </div>
     );
 }
 
-export default function ContactsView({ auth, messages = { data: [] } }) {
+export default function ContactsView() {
     const { props } = usePage();
+    const { isDark, isArabic } = useSitePreferences();
+
+    const messages = props.messages || {
+        data: [],
+        total: 0,
+        current_page: 1,
+        last_page: 1,
+        from: 0,
+        to: 0,
+    };
     const flash = props.flash || {};
+    const filters = props.filters || { search: "" };
 
-    const locale =
-        typeof window !== "undefined"
-            ? localStorage.getItem("mindgate_locale") || "en"
-            : "en";
+    const [search, setSearch] = useState(filters.search || "");
 
-    const isArabic = locale === "ar";
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.get(
+                route("admin.messages"),
+                { search },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        }, 350);
 
-    const t = useMemo(
-        () => ({
-            title: isArabic ? "الرسائل" : "Messages",
-            search: isArabic ? "ابحث في الرسائل..." : "Search messages...",
-            name: isArabic ? "الاسم" : "Name",
-            email: isArabic ? "البريد" : "Email",
-            subject: isArabic ? "الموضوع" : "Subject",
-            message: isArabic ? "الرسالة" : "Message",
-            status: isArabic ? "الحالة" : "Status",
-            action: isArabic ? "الإجراء" : "Action",
-            read: isArabic ? "مقروءة" : "Read",
-            unread: isArabic ? "جديدة" : "Unread",
-            markRead: isArabic ? "تحديد كمقروءة" : "Mark as read",
-            noMessages: isArabic ? "لا توجد رسائل." : "No messages found.",
-            prev: isArabic ? "السابق" : "Previous",
-            next: isArabic ? "التالي" : "Next",
-        }),
-        [isArabic],
-    );
-
-    const [searchQuery, setSearchQuery] = useState("");
-    const form = useForm({});
-    const filteredMessages = Array.isArray(messages.data)
-        ? messages.data.filter((message) => {
-              const q = searchQuery.toLowerCase().trim();
-              if (!q) return true;
-
-              return (
-                  (message.name || "").toLowerCase().includes(q) ||
-                  (message.email || "").toLowerCase().includes(q) ||
-                  (message.subject || "").toLowerCase().includes(q) ||
-                  (message.message || "").toLowerCase().includes(q)
-              );
-          })
-        : [];
-
-    const handleMarkAsRead = (id) => {
-        form.patch(route("admin.messages.read", id), {
-            preserveScroll: true,
-        });
-    };
-
-    const handlePageChange = (page) => {
-        router.get(
-            route("admin.messages"),
-            { page, search: searchQuery },
-            { preserveState: true, preserveScroll: true },
-        );
-    };
+        return () => clearTimeout(timer);
+    }, [search]);
 
     return (
-        <AdminLayout title={t.title} auth={auth}>
-            <Head title={`${t.title} - Mind Gate`} />
-            <FlashBanner flash={flash} />
+        <>
+            <Head title="Admin Messages - Mind Gate" />
 
-            <div className="space-y-6">
-                <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                        <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-[#7aa7bb]/10 px-3 py-1 text-xs font-extrabold text-[#7aa7bb]">
-                                <Mail size={14} />
-                                Mind Gate
+            <AdminLayout
+                title={isArabic ? "إدارة الرسائل" : "Messages Management"}
+                subtitle={
+                    isArabic
+                        ? "عرض رسائل التواصل والبحث عنها وتعليمها كمقروءة"
+                        : "Browse contact messages, search them, and mark them as read"
+                }
+            >
+                <Flash flash={flash} dark={isDark} />
+
+                <div
+                    className={`overflow-hidden rounded-3xl border shadow-lg ${
+                        isDark
+                            ? "border-white/10 bg-white/5"
+                            : "border-slate-200 bg-white"
+                    }`}
+                >
+                    <div
+                        className={`flex flex-col gap-4 border-b p-6 lg:flex-row lg:items-center lg:justify-between ${
+                            isDark ? "border-white/10" : "border-slate-200"
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] p-3 text-white">
+                                <MessageSquare className="h-5 w-5" />
                             </div>
-
-                            <h2 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {t.title}
-                            </h2>
+                            <div>
+                                <h2 className="text-xl font-bold">
+                                    {isArabic
+                                        ? "رسائل التواصل"
+                                        : "Contact Messages"}
+                                </h2>
+                                <p
+                                    className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                                >
+                                    {messages.total || 0}{" "}
+                                    {isArabic ? "رسالة" : "messages"}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="relative xl:w-[360px]">
+                        <div className="relative w-full lg:w-80">
                             <Search
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                size={18}
+                                className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${
+                                    isDark ? "text-white/45" : "text-slate-400"
+                                }`}
                             />
                             <input
                                 type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder={t.search}
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#7aa7bb] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder={
+                                    isArabic
+                                        ? "ابحث بالاسم أو البريد أو العنوان..."
+                                        : "Search by name, email, or subject..."
+                                }
+                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${
+                                    isDark
+                                        ? "border-white/10 bg-white/5 text-white placeholder:text-white/35"
+                                        : "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400"
+                                }`}
                             />
                         </div>
                     </div>
-                </section>
 
-                <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                    <div className="hidden xl:block overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 dark:border-slate-800">
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.name}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.email}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.subject}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.message}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.status}
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        {t.action}
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {filteredMessages.length > 0 ? (
-                                    filteredMessages.map((message) => (
-                                        <tr
-                                            key={message.id}
-                                            className="border-b border-slate-100 transition hover:bg-slate-50/80 dark:border-slate-800 dark:hover:bg-slate-900/60"
-                                        >
-                                            <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">
-                                                {message.name}
-                                            </td>
-                                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
-                                                {message.email}
-                                            </td>
-                                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
-                                                {message.subject}
-                                            </td>
-                                            <td className="px-6 py-5 text-sm text-slate-500 dark:text-slate-400 max-w-[340px]">
-                                                <div className="line-clamp-2">
-                                                    {message.message}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <span
-                                                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
-                                                        message.is_read
-                                                            ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-                                                            : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                                                    }`}
-                                                >
-                                                    {message.is_read ? (
-                                                        <CheckCircle2
-                                                            size={12}
-                                                        />
-                                                    ) : (
-                                                        <Circle size={12} />
-                                                    )}
-                                                    {message.is_read
-                                                        ? t.read
-                                                        : t.unread}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                {!message.is_read && (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleMarkAsRead(
-                                                                message.id,
-                                                            )
-                                                        }
-                                                        className="rounded-2xl bg-[#7aa7bb]/10 px-4 py-2 text-sm font-bold text-[#6797ab] transition hover:bg-[#7aa7bb]/20"
-                                                    >
-                                                        {t.markRead}
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td
-                                            colSpan="6"
-                                            className="px-6 py-12 text-center text-sm text-slate-400"
-                                        >
-                                            {t.noMessages}
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="grid gap-4 p-4 xl:hidden">
-                        {filteredMessages.length > 0 ? (
-                            filteredMessages.map((message) => (
+                    <div className="grid gap-4 p-6">
+                        {messages.data?.length ? (
+                            messages.data.map((message) => (
                                 <div
                                     key={message.id}
-                                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60"
+                                    className={`rounded-3xl border p-5 ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5"
+                                            : "border-slate-200 bg-slate-50"
+                                    }`}
                                 >
-                                    <div className="flex items-start justify-between gap-3">
+                                    <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                         <div>
-                                            <p className="font-bold text-slate-900 dark:text-white">
-                                                {message.name}
-                                            </p>
-                                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                                {message.email}
+                                            <h3 className="text-lg font-bold">
+                                                {message.subject ||
+                                                    (isArabic
+                                                        ? "بدون عنوان"
+                                                        : "No subject")}
+                                            </h3>
+                                            <p
+                                                className={`mt-1 text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                                            >
+                                                {message.name || "Unknown"} •{" "}
+                                                {message.email || "No email"}
                                             </p>
                                         </div>
 
-                                        <span
-                                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
-                                                message.is_read
-                                                    ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-                                                    : "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
-                                            }`}
-                                        >
-                                            {message.is_read
-                                                ? t.read
-                                                : t.unread}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            {message.is_read ? (
+                                                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+                                                    {isArabic
+                                                        ? "مقروءة"
+                                                        : "Read"}
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400">
+                                                    {isArabic
+                                                        ? "غير مقروءة"
+                                                        : "Unread"}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    <div className="mt-4">
-                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                                            {message.subject}
-                                        </p>
-                                        <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                                            {message.message}
-                                        </p>
-                                    </div>
+                                    <p
+                                        className={`text-sm leading-8 ${isDark ? "text-white/75" : "text-slate-700"}`}
+                                    >
+                                        {message.message || ""}
+                                    </p>
 
-                                    {!message.is_read && (
-                                        <button
-                                            onClick={() =>
-                                                handleMarkAsRead(message.id)
-                                            }
-                                            className="mt-4 rounded-2xl bg-[#7aa7bb]/10 px-4 py-2 text-sm font-bold text-[#6797ab] transition hover:bg-[#7aa7bb]/20"
+                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                                        <p
+                                            className={`text-xs ${isDark ? "text-white/50" : "text-slate-500"}`}
                                         >
-                                            {t.markRead}
-                                        </button>
-                                    )}
+                                            {message.created_at
+                                                ? new Date(
+                                                      message.created_at,
+                                                  ).toLocaleString()
+                                                : "—"}
+                                        </p>
+
+                                        {!message.is_read && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    router.patch(
+                                                        route(
+                                                            "admin.messages.read",
+                                                            message.id,
+                                                        ),
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/15"
+                                            >
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                {isArabic
+                                                    ? "تعليم كمقروءة"
+                                                    : "Mark as read"}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="rounded-3xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
-                                {t.noMessages}
+                            <div
+                                className={`rounded-3xl border p-10 text-center ${isDark ? "border-white/10 bg-white/5 text-white/60" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+                            >
+                                {isArabic
+                                    ? "لا توجد رسائل مطابقة."
+                                    : "No matching messages found."}
                             </div>
                         )}
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-                        <div className="text-sm text-slate-400">
-                            {messages.from || 0} - {messages.to || 0} /{" "}
-                            {messages.total || 0}
-                        </div>
+                    <div
+                        className={`flex flex-col gap-4 border-t px-6 py-4 md:flex-row md:items-center md:justify-between ${
+                            isDark ? "border-white/10" : "border-slate-200"
+                        }`}
+                    >
+                        <p
+                            className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                        >
+                            {isArabic
+                                ? `عرض ${messages.from || 0} إلى ${messages.to || 0} من ${messages.total || 0}`
+                                : `Showing ${messages.from || 0} to ${messages.to || 0} of ${messages.total || 0}`}
+                        </p>
 
                         <div className="flex gap-2">
                             <button
+                                type="button"
+                                disabled={messages.current_page <= 1}
                                 onClick={() =>
-                                    handlePageChange(
-                                        (messages.current_page || 1) - 1,
+                                    router.get(
+                                        route("admin.messages"),
+                                        {
+                                            search,
+                                            page: messages.current_page - 1,
+                                        },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
                                     )
                                 }
-                                disabled={(messages.current_page || 1) === 1}
-                                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                className={`rounded-2xl px-4 py-2 text-sm font-semibold disabled:opacity-40 ${
+                                    isDark
+                                        ? "bg-white/5 text-white"
+                                        : "bg-slate-100 text-slate-700"
+                                }`}
                             >
-                                {t.prev}
+                                {isArabic ? "السابق" : "Previous"}
                             </button>
 
                             <button
+                                type="button"
+                                disabled={
+                                    messages.current_page >= messages.last_page
+                                }
                                 onClick={() =>
-                                    handlePageChange(
-                                        (messages.current_page || 1) + 1,
+                                    router.get(
+                                        route("admin.messages"),
+                                        {
+                                            search,
+                                            page: messages.current_page + 1,
+                                        },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                        },
                                     )
                                 }
-                                disabled={
-                                    (messages.current_page || 1) ===
-                                    (messages.last_page || 1)
-                                }
-                                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                className={`rounded-2xl px-4 py-2 text-sm font-semibold disabled:opacity-40 ${
+                                    isDark
+                                        ? "bg-white/5 text-white"
+                                        : "bg-slate-100 text-slate-700"
+                                }`}
                             >
-                                {t.next}
+                                {isArabic ? "التالي" : "Next"}
                             </button>
                         </div>
                     </div>
-                </section>
-            </div>
-        </AdminLayout>
+                </div>
+            </AdminLayout>
+        </>
     );
 }
