@@ -1,203 +1,160 @@
-import React, { useState } from "react";
-import { X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { Link } from "@inertiajs/react";
+import { ShieldCheck, Brain, HeartHandshake } from "lucide-react";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-const LegalPopup = ({ type, onClose }) => {
-    const content = {
-        privacyPolicy: {
-            title: "Privacy Policy",
-            text: `
-        At Mind Gate, we value your privacy. This Privacy Policy outlines how we collect, use, and protect your information.
-
-        **1. Information We Collect**
-        • Personal Information: Name, email address, phone number, etc.
-        • Usage Data: Information about how you use our services, including IP address, browser type, and pages visited.
-
-        **2. How We Use Your Information**
-        • To provide and maintain our services
-        • To notify you about changes to our services
-        • To allow you to participate in interactive features of our services
-        • To provide customer support
-        • To gather analysis or valuable information so that we can improve our services
-        • To monitor the usage of our services
-        • To detect, prevent, and address technical issues
-
-        **3. Data Security**
-        We take the security of your data seriously. We implement appropriate technical and organizational measures to protect your personal information from unauthorized access, use, or disclosure.
-
-        **4. Your Rights**
-        You have the right to:
-        • Access your personal information
-        • Request correction of your personal information
-        • Request deletion of your personal information
-        • Object to the processing of your personal information
-        • Withdraw consent at any time where we rely on your consent to process your personal information
-
-        **5. Changes to This Privacy Policy**
-        We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
-        We will let you know via email and/or a prominent notice on our services, prior to the change becoming effective and update the "effective date" at the top of this Privacy Policy.
-        You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page.
-
-        **6. Contact Us**
-        If you have any questions about this Privacy Policy, please contact us:
-        • By email: [support@Mind Gate.com](mailto:support@Mind Gate.com)
-        • By phone: +1 (123) 456-7890
-      `,
-        },
-        termsOfService: {
-            title: "Terms of Service",
-            text: `
-        Welcome to Mind Gate. By using our services, you agree to the following terms and conditions:
-
-        **1. Acceptance of Terms**
-        By accessing or using our services, you agree to be bound by these terms and conditions. If you do not agree to these terms, please do not use our services.
-
-        **2. Intellectual Property**
-        All content, including text, graphics, logos, and images, is the property of Mind Gate or its licensors and is protected by intellectual property laws.
-
-        **3. User Conduct**
-        You agree to use our services for lawful purposes and in a manner that does not violate any applicable laws or regulations.
-
-        **4. Privacy Policy**
-        We collect and use your information in accordance with our Privacy Policy.
-
-        **5. Limitation of Liability**
-        We shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising from the use or inability to use our services.
-
-        **6. Indemnification**
-        You agree to indemnify and hold harmless Mind Gate and its affiliates, licensors, and suppliers from any claims, damages, or liabilities arising from your use of our services.
-
-        **7. Governing Law**
-        These terms and conditions shall be governed by and construed in accordance with the laws of [Your Jurisdiction]. Any disputes arising from these terms and conditions shall be subject to the excGateive jurisdiction of the courts located in [Your Jurisdiction].
-
-        **8. Changes to Terms**
-        We may update these terms and conditions from time to time. We will notify you of any changes by posting the new terms on this page.
-        You are advised to review these terms periodically for any changes. Changes to these terms are effective when they are posted on this page.
-
-        **9. Contact Us**
-        If you have any questions about these terms and conditions, please contact us:
-        • By email: [support@Mind Gate.com](mailto:support@Mind Gate.com)
-        • By phone: +1 (123) 456-7890
-      `,
-        },
-    };
-
-    const { title, text } = content[type];
+export default function Footer() {
+    const { isDark, isArabic } = useSitePreferences();
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4"
-            >
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                    className="relative w-full max-w-3xl mx-auto rounded-xl shadow-2xl bg-gradient-to-br from-gray-50 to-green-50 border border-green-500/20"
-                >
-                    {/* Header */}
-                    <div className="flex justify-between items-center p-5 border-b border-green-200">
-                        <h2 className="text-2xl font-semibold text-green-600">
-                            {title}
-                        </h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full transition-all duration-300 hover:bg-green-500/20 text-gray-900"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+        <footer
+            className={`border-t ${
+                isDark
+                    ? "border-white/10 bg-[#071019] text-white"
+                    : "border-slate-200 bg-white text-slate-900"
+            }`}
+        >
+            <div className="mx-auto max-w-7xl px-6 py-12 md:px-12 lg:px-16">
+                <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <img
+                                src="/images/logo.png"
+                                alt="Mind Gate"
+                                className="h-12 w-auto object-contain"
+                            />
+                            <div>
+                                <div className="text-xl font-black">
+                                    Mind Gate
+                                </div>
+                                <div
+                                    className={`text-sm ${isDark ? "text-white/60" : "text-slate-500"}`}
+                                >
+                                    {isArabic
+                                        ? "بوابة ذكية للصحة النفسية"
+                                        : "A smart gateway for mental health"}
+                                </div>
+                            </div>
+                        </div>
 
-                    {/* Content */}
-                    <div className="p-6 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-track-green-100 scrollbar-thumb-gray-400">
-                        <div className="text-base text-gray-700 leading-relaxed">
-                            <pre className="whitespace-pre-wrap font-sans">
-                                {text.split("\n").map((line, index) => (
-                                    <span
+                        <p
+                            className={`mt-5 max-w-2xl text-sm leading-8 ${isDark ? "text-white/70" : "text-slate-600"}`}
+                        >
+                            {isArabic
+                                ? "منصة رقمية متكاملة تساعد المستخدم على التقييم الأولي، المتابعة اليومية، الوصول إلى الموارد، واكتشاف المختص المناسب ضمن تجربة واضحة وآمنة."
+                                : "An integrated digital platform that helps users with initial assessment, daily tracking, access to resources, and discovering the right specialist in a clear and safe experience."}
+                        </p>
+
+                        <div className="mt-6 flex flex-wrap gap-3">
+                            {[
+                                {
+                                    icon: ShieldCheck,
+                                    label: isArabic
+                                        ? "خصوصية عالية"
+                                        : "High privacy",
+                                },
+                                {
+                                    icon: Brain,
+                                    label: isArabic
+                                        ? "تقييم أولي ذكي"
+                                        : "Smart initial assessment",
+                                },
+                                {
+                                    icon: HeartHandshake,
+                                    label: isArabic
+                                        ? "دعم إنساني"
+                                        : "Human-centered support",
+                                },
+                            ].map((item, index) => {
+                                const Icon = item.icon;
+                                return (
+                                    <div
                                         key={index}
-                                        className={
-                                            line.trim().startsWith("**")
-                                                ? "font-semibold text-gray-900"
-                                                : ""
-                                        }
+                                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+                                            isDark
+                                                ? "bg-white/5 text-white/85"
+                                                : "bg-slate-100 text-slate-700"
+                                        }`}
                                     >
-                                        {line.replace(/\*\*/g, "")}
-                                        <br />
-                                    </span>
-                                ))}
-                            </pre>
+                                        <Icon className="h-4 w-4 text-[#7aa7bb]" />
+                                        {item.label}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
-    );
-};
 
-const Footer = () => {
-    const [activePopup, setActivePopup] = useState(null);
+                    <div className="grid gap-8 sm:grid-cols-2">
+                        <div>
+                            <h3 className="text-base font-black">
+                                {isArabic ? "روابط الموقع" : "Site links"}
+                            </h3>
+                            <div className="mt-4 space-y-3">
+                                <Link
+                                    href={route("home")}
+                                    className="block text-sm hover:text-[#7aa7bb]"
+                                >
+                                    {isArabic ? "الرئيسية" : "Home"}
+                                </Link>
+                                <Link
+                                    href={route("specialists.index")}
+                                    className="block text-sm hover:text-[#7aa7bb]"
+                                >
+                                    {isArabic ? "المختصون" : "Specialists"}
+                                </Link>
+                                <Link
+                                    href={route("resources.index")}
+                                    className="block text-sm hover:text-[#7aa7bb]"
+                                >
+                                    {isArabic ? "الموارد" : "Resources"}
+                                </Link>
+                                <Link
+                                    href={route("assessment.quick.page")}
+                                    className="block text-sm hover:text-[#7aa7bb]"
+                                >
+                                    {isArabic
+                                        ? "التقييم الأولي"
+                                        : "Quick Assessment"}
+                                </Link>
+                                <Link
+                                    href={route("about-us")}
+                                    className="block text-sm hover:text-[#7aa7bb]"
+                                >
+                                    {isArabic ? "من نحن" : "About Us"}
+                                </Link>
+                            </div>
+                        </div>
 
-    return (
-        <>
-            <motion.footer
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="relative py-4 mt-12 text-center overflow-hidden bg-gray-950"
-            >
-                {/* Fade-in gradient overlay - يبدأ من شفاف لتحت */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-gray-950" />
-
-                {/* Very subtle gradient circles */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute -top-20 left-1/4 w-96 h-96 bg-emerald-600 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-20 right-1/4 w-96 h-96 bg-emerald-700 rounded-full blur-3xl" />
-                </div>
-
-                <div className="relative z-10">
-                    <p className="text-white text-sm">
-                        © 2025 Mind Gate. All rights reserved.
-                    </p>
-                    <div className="mt-10 space-x-6">
-                        <button
-                            onClick={() => setActivePopup("privacyPolicy")}
-                            className="text-white text-sm hover:bg-emerald-500/20 hover:text-emerald-400 rounded-full px-3 py-1 transition-all duration-300"
-                        >
-                            Privacy Policy
-                        </button>
-                        <button
-                            onClick={() => setActivePopup("termsOfService")}
-                            className="text-white text-sm hover:bg-emerald-500/20 hover:text-emerald-400 rounded-full px-3 py-1 transition-all duration-300"
-                        >
-                            Terms of Service
-                        </button>
-                        <a
-                            href="/ContactPage"
-                            className="text-white text-sm hover:bg-emerald-500/20 hover:text-emerald-400 rounded-full px-3 py-1 transition-all duration-300"
-                        >
-                            Contact
-                        </a>
-                        <a
-                            href="/about-us"
-                            className="text-white text-sm hover:bg-emerald-500/20 hover:text-emerald-400 rounded-full px-3 py-1 transition-all duration-300"
-                        >
-                            About Us
-                        </a>
+                        <div>
+                            <h3 className="text-base font-black">
+                                {isArabic ? "تواصل" : "Contact"}
+                            </h3>
+                            <div
+                                className={`mt-4 space-y-3 text-sm ${isDark ? "text-white/70" : "text-slate-600"}`}
+                            >
+                                <div>support@mindgate.com</div>
+                                <div>+962-777777777</div>
+                                <div>{isArabic ? "الأردن" : "Jordan"}</div>
+                                <Link
+                                    href={route("ContactPage")}
+                                    className="block font-semibold text-[#7aa7bb]"
+                                >
+                                    {isArabic
+                                        ? "اذهب إلى صفحة التواصل"
+                                        : "Open contact page"}
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </motion.footer>
 
-            {activePopup && (
-                <LegalPopup
-                    type={activePopup}
-                    onClose={() => setActivePopup(null)}
-                />
-            )}
-        </>
+                <div
+                    className={`mt-10 border-t pt-5 text-sm ${isDark ? "border-white/10 text-white/50" : "border-slate-200 text-slate-500"}`}
+                >
+                    © 2026 Mind Gate.{" "}
+                    {isArabic ? "جميع الحقوق محفوظة." : "All rights reserved."}
+                </div>
+            </div>
+        </footer>
     );
-};
-
-export default Footer;
+}

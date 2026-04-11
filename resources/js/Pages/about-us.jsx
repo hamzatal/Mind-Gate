@@ -1,545 +1,403 @@
-import React from "react";
-import { Head, Link } from "@inertiajs/react";
+import React, { useMemo } from "react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import { motion } from "framer-motion";
 import {
-    ArrowRight,
-    ArrowLeft,
-    Sparkles,
     Brain,
-    Heart,
-    Shield,
-    Users,
     HeartHandshake,
-    MessageCircle,
-    BadgeCheck,
+    Shield,
+    Sparkles,
+    Users,
     Stethoscope,
+    LineChart,
     Building2,
+    ArrowRight,
     CheckCircle2,
-    Star,
-    Clock,
-    TrendingUp,
-    Info,
+    Globe2,
+    LockKeyhole,
 } from "lucide-react";
+import NavV2 from "@/Components/NavBar";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-const About = ({ auth }) => {
-    const user = auth?.user || null;
-    const canGoBack = window.history.length > 2;
-    const backgroundImage = "/images/word.png";
+export default function About() {
+    const { props } = usePage();
+    const { auth = {} } = props;
+    const { isDark, isArabic } = useSitePreferences();
 
-    const fadeInUp = {
-        hidden: { opacity: 0, y: 40 },
-        visible: { opacity: 1, y: 0 },
-    };
+    const t = useMemo(
+        () => ({
+            title: isArabic ? "من نحن - Mind Gate" : "About Us - Mind Gate",
+            badge: isArabic
+                ? "منصة رقمية للصحة النفسية"
+                : "Digital mental health platform",
+            heading1: isArabic ? "نبني تجربة" : "We build a",
+            heading2: isArabic
+                ? "أكثر إنسانية ووضوحًا"
+                : "more human and clear",
+            heading3: isArabic ? "في الدعم النفسي" : "support experience",
+            intro: isArabic
+                ? "Mind Gate صُممت لتكون مساحة موحّدة وآمنة تربط الأفراد والمختصين والمؤسسات في تجربة نفسية رقمية حديثة وسهلة الاستخدام."
+                : "Mind Gate is built as a safe unified space connecting individuals, specialists, and organizations through a modern mental-health experience.",
+            missionTitle: isArabic ? "رسالتنا" : "Our Mission",
+            missionText: isArabic
+                ? "أن نجعل الوصول إلى الدعم النفسي أبسط وأكثر أمانًا وتنظيمًا، مع الاستفادة من الذكاء الاصطناعي دون أن نفقد البعد الإنساني."
+                : "To make mental-health support simpler, safer, and better organized while using AI without losing the human side.",
+            visionTitle: isArabic ? "رؤيتنا" : "Our Vision",
+            visionText: isArabic
+                ? "أن تصبح Mind Gate البوابة الذكية الموثوقة للصحة النفسية على المستوى الفردي والمؤسسي."
+                : "To become the trusted smart gateway for mental health across individuals and organizations.",
+            valuesTitle: isArabic
+                ? "ما الذي يميزنا؟"
+                : "What makes us different?",
+            blocks: [
+                {
+                    icon: Shield,
+                    title: isArabic ? "خصوصية أولاً" : "Privacy first",
+                    text: isArabic
+                        ? "بيانات المستخدمين تُعامل بسرية عالية وتجربة المنصة مبنية على الثقة."
+                        : "User data is handled with care, and trust is part of the platform foundation.",
+                },
+                {
+                    icon: Brain,
+                    title: isArabic ? "ذكاء اصطناعي نافع" : "Useful AI",
+                    text: isArabic
+                        ? "تحليل أولي ذكي ومساعدة في التوجيه دون استبدال المختص."
+                        : "Smart early analysis and guidance without replacing the specialist.",
+                },
+                {
+                    icon: HeartHandshake,
+                    title: isArabic ? "تجربة إنسانية" : "Human-centered",
+                    text: isArabic
+                        ? "كل خطوة مصممة لتقليل التوتر وزيادة الوضوح والثقة."
+                        : "Every step is designed to reduce friction and increase confidence.",
+                },
+                {
+                    icon: Building2,
+                    title: isArabic
+                        ? "جاهزة للمؤسسات"
+                        : "Built for organizations",
+                    text: isArabic
+                        ? "تخدم الأفراد كما تخدم الشركات في دعم الصحة النفسية للموظفين."
+                        : "Supports both individuals and organizations with scalable workflows.",
+                },
+            ],
+            stats: [
+                {
+                    icon: Users,
+                    value: "+1000",
+                    label: isArabic ? "مستخدم" : "Users",
+                },
+                {
+                    icon: Stethoscope,
+                    value: "+50",
+                    label: isArabic ? "مختص" : "Specialists",
+                },
+                {
+                    icon: LineChart,
+                    value: "24/7",
+                    label: isArabic ? "متابعة" : "Tracking",
+                },
+                {
+                    icon: Globe2,
+                    value: "AI",
+                    label: isArabic ? "توجيه ذكي" : "Smart guidance",
+                },
+            ],
+            featuresTitle: isArabic ? "ركائز المنصة" : "Core pillars",
+            features: [
+                isArabic
+                    ? "إنشاء حساب ومسار استخدام واضح"
+                    : "Clear onboarding and account flow",
+                isArabic
+                    ? "تقييم أولي مدعوم بالذكاء الاصطناعي"
+                    : "AI-powered initial assessment",
+                isArabic
+                    ? "اختيار المختص الأنسب حسب الاحتياج"
+                    : "Smarter specialist matching",
+                isArabic
+                    ? "متابعة يومية منظمة للحالة النفسية"
+                    : "Structured daily mental tracking",
+                isArabic
+                    ? "حلول خاصة بالمؤسسات والشركات"
+                    : "Dedicated organization workflows",
+                isArabic
+                    ? "واجهة آمنة وسهلة الاستخدام"
+                    : "Safe and accessible experience",
+            ],
+            ctaTitle: isArabic ? "ابدأ مع Mind Gate" : "Start with Mind Gate",
+            ctaText: isArabic
+                ? "إذا كنت تبحث عن تجربة نفسية رقمية أكثر وضوحًا وأمانًا، فهذه هي البداية المناسبة."
+                : "If you want a clearer and safer digital mental-health experience, this is a strong place to begin.",
+            ctaPrimary:
+                auth?.user || auth?.admin
+                    ? isArabic
+                        ? "العودة إلى الرئيسية"
+                        : "Back to home"
+                    : isArabic
+                      ? "ابدأ الآن"
+                      : "Get started",
+            ctaSecondary: isArabic ? "تواصل معنا" : "Contact us",
+        }),
+        [isArabic, auth],
+    );
 
-    const staggerContainer = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.2 },
-        },
-    };
+    const pageBg = isDark
+        ? "bg-[#081018] text-white"
+        : "bg-[#f6fafc] text-slate-900";
 
-    const scaleIn = {
-        hidden: { opacity: 0, scale: 0.8 },
-        visible: { opacity: 1, scale: 1 },
-    };
+    const glass = isDark
+        ? "bg-white/5 border-white/10"
+        : "bg-white/80 border-slate-200";
 
-    // Timeline
-    const timeline = [
-        {
-            year: "٢٠٢٢",
-            title: "البداية",
-            description:
-                "وُلدت فكرة MindBridge من رغبة حقيقية في تقليص الفجوة بين الأفراد والدعم النفسي المتخصص.",
-        },
-        {
-            year: "٢٠٢٣",
-            title: "الانطلاق",
-            description:
-                "إطلاق النسخة الأولى من المنصة وتحقيق أول ١٠٠٠ مستخدم خلال الأشهر الثلاثة الأولى.",
-        },
-        {
-            year: "٢٠٢٤",
-            title: "التوسع",
-            description:
-                "توسيع شبكة المعالجين لتشمل تخصصات متعددة، وإطلاق حلول الشركات والمؤسسات.",
-        },
-        {
-            year: "٢٠٢٥",
-            title: "الريادة",
-            description:
-                "منصة رائدة في الصحة النفسية الرقمية تجمع الذكاء الاصطناعي مع الخبرة البشرية في مكان واحد.",
-        },
-    ];
-
-    // Stats
-    const stats = [
-        { icon: Users, value: "+١٠٠٠", label: "مستخدم نشط" },
-        { icon: Stethoscope, value: "+٥٠", label: "معالج معتمد" },
-        { icon: Clock, value: "٢٤/٧", label: "دعم متواصل" },
-        { icon: BadgeCheck, value: "٩٨٪", label: "رضا المستخدمين" },
-    ];
-
-    // Core values
-    const values = [
-        {
-            icon: Heart,
-            title: "الإنسانية",
-            description:
-                "نؤمن أن كل شخص يستحق الدعم النفسي بغض النظر عن ظروفه.",
-            color: "from-pink-500 to-rose-500",
-        },
-        {
-            icon: Brain,
-            title: "الابتكار",
-            description:
-                "نستخدم أحدث تقنيات الذكاء الاصطناعي لتحسين تجربة الصحة النفسية.",
-            color: "from-[#6797ab] to-[#4a7f96]",
-        },
-        {
-            icon: Shield,
-            title: "الأمان",
-            description:
-                "خصوصيتك خط أحمر — بيانات مشفّرة وسرية تامة في كل تفاعل.",
-            color: "from-emerald-500 to-teal-500",
-        },
-        {
-            icon: HeartHandshake,
-            title: "الثقة",
-            description:
-                "نبني علاقة طويلة الأمد مع مستخدمينا قائمة على الشفافية والاحترام.",
-            color: "from-purple-500 to-indigo-500",
-        },
-    ];
-
-    // What sets us apart
-    const features = [
-        "تقييم نفسي أولي مدعوم بالذكاء الاصطناعي",
-        "توصية ذكية بأنسب معالج بناءً على حالتك",
-        "جلسات أونلاين آمنة ومشفّرة بالكامل",
-        "مرافق يومي لمتابعة المزاج والتوتر",
-        "تنبيهات مبكرة عند ظهور علامات الإرهاق",
-        "حلول مؤسسية مخصصة للشركات والفرق",
-    ];
+    const textMuted = isDark ? "text-white/70" : "text-slate-600";
 
     return (
         <div
-            dir="rtl"
-            className="min-h-screen w-full relative overflow-hidden bg-[#f4f8fb]"
+            dir={isArabic ? "rtl" : "ltr"}
+            className={`min-h-screen ${pageBg} relative overflow-hidden`}
         >
-            <Head title="من نحن - MindBridge" />
+            <Head title={t.title} />
+            <NavV2 />
 
-            {/* Background */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('${backgroundImage}')` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#163040]/70 via-[#173444]/65 to-[#122734]/80 z-0" />
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -top-20 end-0 h-[340px] w-[340px] rounded-full bg-[#7aa7bb]/20 blur-3xl" />
+                <div className="absolute bottom-0 start-0 h-[300px] w-[300px] rounded-full bg-[#9cc7d8]/20 blur-3xl" />
+            </div>
 
-            {/* Decorative Glow */}
-            <div className="absolute top-0 right-0 w-[420px] h-[420px] bg-[#9cc7d8]/20 rounded-full blur-3xl z-0" />
-            <div className="absolute bottom-0 left-0 w-[380px] h-[380px] bg-[#bcdccf]/20 rounded-full blur-3xl z-0" />
-
-            <div className="relative z-10">
-                {/* ===== Navbar ===== */}
-                <nav className="flex justify-between items-center p-6 md:px-12 lg:px-16">
-                    <div className="flex items-center">
-                        <img
-                            src="/images/logo.png"
-                            alt="MindBridge Logo"
-                            className="h-14 md:h-16 object-contain drop-shadow-lg"
-                        />
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {canGoBack && (
-                            <button
-                                onClick={() => window.history.back()}
-                                className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-xl transition-all duration-300 font-semibold"
+            <main className="relative z-10 pt-28">
+                <section className="px-6 md:px-12 lg:px-16 pb-16">
+                    <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+                        <div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${glass}`}
                             >
-                                <ArrowLeft className="w-4 h-4" />
-                                <span>رجوع</span>
-                            </button>
-                        )}
-                        <button
-                            onClick={() => (window.location.href = "/login")}
-                            className="group bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white px-6 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-[#7aa7bb]/30 font-semibold"
-                        >
-                            <span>تسجيل الدخول</span>
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                        </button>
-                    </div>
-                </nav>
+                                <Sparkles className="h-4 w-4 text-[#7aa7bb]" />
+                                {t.badge}
+                            </motion.div>
 
-                {/* ===== Hero Section ===== */}
-                <section className="relative pt-16 pb-20 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto text-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.8 }}
-                            className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 border border-white/20 rounded-full backdrop-blur-md"
-                        >
-                            <Sparkles className="w-5 h-5 text-[#b9dfcf]" />
-                            <span className="text-[#d8efe6] font-semibold text-sm tracking-wide">
-                                قصتنا ورسالتنا
-                            </span>
-                        </motion.div>
-
-                        <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className="text-5xl md:text-7xl font-black text-white leading-tight drop-shadow-2xl mb-6"
-                        >
-                            نحن هنا لأن
-                            <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] via-[#9ed0d8] to-[#7faabd]">
-                                صحتك النفسية تهمنا
-                            </span>
-                        </motion.h1>
-
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.4 }}
-                            className="text-xl text-[#e8f1f5] max-w-3xl mx-auto mb-12 leading-9"
-                        >
-                            MindBridge لم تُبنَ كمنصة تقنية فحسب — بُنيت كجسر
-                            حقيقي بين الإنسان وما يحتاجه من دعم نفسي، في الوقت
-                            المناسب وبالطريقة الأنسب.
-                        </motion.p>
-
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                        >
-                            <Link
-                                href="/register"
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white rounded-2xl font-bold text-lg shadow-2xl hover:shadow-[#7aa7bb]/30 transition-all duration-300 hover:scale-105"
+                            <motion.h1
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.08 }}
+                                className="mt-6 text-5xl font-black leading-tight md:text-7xl"
                             >
-                                ابدأ رحلتك الآن
-                                <Brain className="w-5 h-5" />
-                            </Link>
-                        </motion.div>
-                    </div>
-                </section>
-
-                {/* ===== Stats Section ===== */}
-                <section className="py-14 border-y border-white/10 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto">
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={staggerContainer}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-                        >
-                            {stats.map((stat, index) => (
-                                <motion.div
-                                    key={index}
-                                    variants={fadeInUp}
-                                    className="text-center group"
-                                >
-                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 border border-white/20 mb-4 group-hover:bg-white/15 transition-all duration-300 backdrop-blur-md">
-                                        <stat.icon className="w-8 h-8 text-[#c6e4d5]" />
-                                    </div>
-                                    <h3 className="text-4xl font-black text-white mb-2">
-                                        {stat.value}
-                                    </h3>
-                                    <p className="text-[#d1e0e7] text-sm">
-                                        {stat.label}
-                                    </p>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    </div>
-                </section>
-
-                {/* ===== Our Story + Timeline ===== */}
-                <section className="py-20 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto">
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={fadeInUp}
-                            className="grid md:grid-cols-2 gap-12 items-center"
-                        >
-                            {/* Text */}
-                            <div>
-                                <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-white/10 border border-white/20 rounded-full backdrop-blur-md">
-                                    <Star className="w-4 h-4 text-[#b9dfcf]" />
-                                    <span className="text-sm font-semibold text-[#d8efe6]">
-                                        قصتنا
-                                    </span>
-                                </div>
-
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
-                                    بُنينا من أجلك،
-                                    <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] to-[#7faabd]">
-                                        لأجل صحتك
-                                    </span>
-                                </h2>
-
-                                <div className="space-y-5 text-[#e0ebf0] text-lg leading-9">
-                                    <p>
-                                        بدأت MindBridge من سؤال بسيط: لماذا يصعب
-                                        على الناس طلب المساعدة النفسية؟ الحرج،
-                                        التكلفة، وصعوبة إيجاد المختص المناسب —
-                                        كانت هذه أكبر العوائق.
-                                    </p>
-                                    <p>
-                                        قررنا بناء منصة تزيل هذه العوائق كلها.
-                                        منصة تجعل الخطوة الأولى نحو الدعم النفسي
-                                        سهلة، سريعة، وخالية من الحرج.
-                                    </p>
-                                    <p>
-                                        اليوم، نفخر بأن MindBridge أصبحت وجهة
-                                        موثوقة لآلاف المستخدمين الباحثين عن دعم
-                                        نفسي حقيقي في بيئة آمنة.
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Timeline */}
-                            <div className="relative">
-                                <div className="absolute right-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#7aa7bb] to-[#bcdccf]" />
-                                <div className="space-y-8">
-                                    {timeline.map((item, index) => (
-                                        <motion.div
-                                            key={index}
-                                            initial={{ opacity: 0, x: -50 }}
-                                            whileInView={{ opacity: 1, x: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: index * 0.2 }}
-                                            className="relative pr-20"
-                                        >
-                                            <div className="absolute right-0 w-16 h-16 rounded-full bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] flex items-center justify-center font-bold text-xs text-white border-4 border-[#122734]">
-                                                {item.year}
-                                            </div>
-                                            <div className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-5 shadow-xl transition-all duration-300 hover:bg-white/15">
-                                                <h3 className="text-white font-extrabold text-lg mb-1">
-                                                    {item.title}
-                                                </h3>
-                                                <p className="text-[#e0ebf0] text-sm leading-7">
-                                                    {item.description}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                </section>
-
-                {/* ===== Core Values ===== */}
-                <section className="py-20 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto">
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={fadeInUp}
-                            className="text-center mb-14"
-                        >
-                            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-                                ما الذي{" "}
-                                <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] to-[#7faabd]">
-                                    يحرّكنا؟
+                                {t.heading1}
+                                <br />
+                                <span className="bg-gradient-to-l from-[#c7e5d6] via-[#9ed0d8] to-[#7faabd] bg-clip-text text-transparent">
+                                    {t.heading2}
                                 </span>
-                            </h2>
-                            <p className="text-xl text-[#d1e0e7] max-w-2xl mx-auto leading-8">
-                                قيمنا الجوهرية تشكّل كل قرار نتخذه وكل تجربة
-                                نبنيها لمستخدمينا
-                            </p>
-                        </motion.div>
+                                <br />
+                                {t.heading3}
+                            </motion.h1>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 26 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.14 }}
+                                className={`mt-6 max-w-2xl text-lg leading-9 ${textMuted}`}
+                            >
+                                {t.intro}
+                            </motion.p>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 26 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="mt-8 flex flex-wrap gap-4"
+                            >
+                                <Link
+                                    href={
+                                        auth?.user || auth?.admin
+                                            ? "/home"
+                                            : "/register"
+                                    }
+                                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-7 py-4 text-base font-bold text-white shadow-xl transition hover:scale-[1.02]"
+                                >
+                                    {t.ctaPrimary}
+                                    <ArrowRight className="h-5 w-5" />
+                                </Link>
+
+                                <Link
+                                    href="/ContactPage"
+                                    className={`inline-flex items-center gap-2 rounded-2xl border px-7 py-4 text-base font-bold transition ${glass}`}
+                                >
+                                    {t.ctaSecondary}
+                                </Link>
+                            </motion.div>
+                        </div>
 
                         <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={staggerContainer}
-                            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.12 }}
+                            className={`relative overflow-hidden rounded-[34px] border p-7 shadow-2xl ${glass}`}
                         >
-                            {values.map((value, index) => (
-                                <motion.div
-                                    key={index}
-                                    variants={scaleIn}
-                                    whileHover={{ y: -8 }}
-                                    className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-8 shadow-xl transition-all duration-300 hover:bg-white/15"
-                                >
-                                    <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl opacity-60" />
-                                    <div className="relative">
-                                        <div
-                                            className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${value.color} mb-6`}
-                                        >
-                                            <value.icon className="w-7 h-7 text-white" />
+                            <div className="grid grid-cols-2 gap-4">
+                                {t.stats.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className={`rounded-3xl border p-5 ${glass}`}
+                                    >
+                                        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                            <item.icon className="h-6 w-6" />
                                         </div>
-                                        <h3 className="text-white font-extrabold text-xl mb-3">
-                                            {value.title}
-                                        </h3>
-                                        <p className="text-[#e0ebf0] text-sm leading-7">
-                                            {value.description}
-                                        </p>
+                                        <div className="text-3xl font-black">
+                                            {item.value}
+                                        </div>
+                                        <div
+                                            className={`mt-2 text-sm ${textMuted}`}
+                                        >
+                                            {item.label}
+                                        </div>
                                     </div>
-                                </motion.div>
-                            ))}
+                                ))}
+                            </div>
+
+                            <div
+                                className={`mt-5 rounded-3xl border p-5 ${glass}`}
+                            >
+                                <div className="mb-3 flex items-center gap-3">
+                                    <LockKeyhole className="h-5 w-5 text-[#7aa7bb]" />
+                                    <div className="font-extrabold">
+                                        {isArabic
+                                            ? "منصة آمنة وواضحة"
+                                            : "Safe and structured"}
+                                    </div>
+                                </div>
+                                <p className={`text-sm leading-7 ${textMuted}`}>
+                                    {isArabic
+                                        ? "تصميم Mind Gate مبني حول الوضوح والخصوصية وسهولة الوصول، مع تنظيم يحترم اختلاف احتياجات المستخدمين."
+                                        : "Mind Gate is designed around clarity, privacy, and accessible guidance, with workflows that respect different user needs."}
+                                </p>
+                            </div>
                         </motion.div>
                     </div>
                 </section>
 
-                {/* ===== What Sets Us Apart ===== */}
-                <section className="py-20 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid md:grid-cols-2 gap-12 items-center">
-                            {/* Visual Side */}
-                            <motion.div
-                                initial={{ opacity: 0, x: 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                className="relative"
-                            >
-                                <div className="aspect-square rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl flex items-center justify-center overflow-hidden shadow-2xl">
-                                    <TrendingUp className="w-64 h-64 text-white/10" />
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#7aa7bb]/20 to-[#bcdccf]/10" />
-                                </div>
-                                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] rounded-3xl flex items-center justify-center shadow-xl">
-                                    <HeartHandshake className="w-16 h-16 text-white" />
-                                </div>
-                            </motion.div>
+                <section className="px-6 md:px-12 lg:px-16 pb-16">
+                    <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
+                        <div
+                            className={`rounded-[32px] border p-8 shadow-xl ${glass}`}
+                        >
+                            <div className="mb-4 text-2xl font-black">
+                                {t.missionTitle}
+                            </div>
+                            <p className={`text-lg leading-9 ${textMuted}`}>
+                                {t.missionText}
+                            </p>
+                        </div>
 
-                            {/* Content Side */}
-                            <motion.div
-                                initial={{ opacity: 0, x: -50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                            >
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
-                                    لماذا تختار{" "}
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] to-[#7faabd]">
-                                        MindBridge؟
-                                    </span>
-                                </h2>
-                                <p className="text-xl text-[#d1e0e7] mb-8 leading-8">
-                                    نتجاوز حدود التطبيقات التقليدية لنقدم دعمًا
-                                    نفسيًا حقيقيًا ومتكاملًا
-                                </p>
-
-                                <div className="space-y-4">
-                                    {features.map((feature, index) => (
-                                        <motion.div
-                                            key={index}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            whileInView={{ opacity: 1, x: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: index * 0.1 }}
-                                            className="flex items-center gap-4 p-4 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl hover:bg-white/15 transition-all duration-300"
-                                        >
-                                            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] flex items-center justify-center">
-                                                <CheckCircle2 className="w-5 h-5 text-white" />
-                                            </div>
-                                            <span className="text-[#e0ebf0] text-base">
-                                                {feature}
-                                            </span>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </motion.div>
+                        <div
+                            className={`rounded-[32px] border p-8 shadow-xl ${glass}`}
+                        >
+                            <div className="mb-4 text-2xl font-black">
+                                {t.visionTitle}
+                            </div>
+                            <p className={`text-lg leading-9 ${textMuted}`}>
+                                {t.visionText}
+                            </p>
                         </div>
                     </div>
                 </section>
 
-                {/* ===== CTA Section ===== */}
-                <section className="py-20 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-4xl mx-auto">
-                        <motion.div
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={fadeInUp}
-                            className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-12 text-center shadow-2xl"
-                        >
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#9cc7d8]/20 rounded-full blur-3xl" />
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#bcdccf]/20 rounded-full blur-3xl" />
+                <section className="px-6 md:px-12 lg:px-16 pb-16">
+                    <div className="mx-auto max-w-7xl">
+                        <div className="mb-8 text-center">
+                            <h2 className="text-4xl font-black">
+                                {t.valuesTitle}
+                            </h2>
+                        </div>
 
-                            <div className="relative">
-                                <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 border border-white/20 rounded-full backdrop-blur-md">
-                                    <Sparkles className="w-5 h-5 text-[#b9dfcf]" />
-                                    <span className="text-[#d8efe6] font-semibold text-sm">
-                                        خطوة واحدة تكفي
-                                    </span>
-                                </div>
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                            {t.blocks.map((item, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 24 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.08 }}
+                                    className={`rounded-[30px] border p-7 shadow-lg ${glass}`}
+                                >
+                                    <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                        <item.icon className="h-7 w-7" />
+                                    </div>
 
-                                <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
-                                    مستعد لتبدأ رحلتك؟
-                                </h2>
-                                <p className="text-xl text-[#d1e0e7] mb-10 max-w-2xl mx-auto leading-8">
-                                    انضم لآلاف المستخدمين الذين وجدوا في
-                                    MindBridge المكان الآمن للدعم النفسي الذي
-                                    يستحقونه
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                    {!user ? (
-                                        <Link
-                                            href="/register"
-                                            className="group px-10 py-4 bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white rounded-2xl font-bold text-lg shadow-2xl hover:shadow-[#7aa7bb]/30 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            ابدأ مجانًا الآن
-                                            <Brain className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                        </Link>
-                                    ) : (
-                                        <Link
-                                            href="/dashboard"
-                                            className="group px-10 py-4 bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white rounded-2xl font-bold text-lg shadow-2xl hover:shadow-[#7aa7bb]/30 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            انتقل للوحة التحكم
-                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                        </Link>
-                                    )}
-                                    <Link
-                                        href="/ContactPage"
-                                        className="group px-10 py-4 bg-white/10 hover:bg-white/20 border border-white/25 text-white rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                                    <div className="mb-3 text-xl font-extrabold">
+                                        {item.title}
+                                    </div>
+                                    <p
+                                        className={`text-sm leading-8 ${textMuted}`}
                                     >
-                                        تحدث مع فريقنا
-                                        <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    </Link>
-                                </div>
-                            </div>
-                        </motion.div>
+                                        {item.text}
+                                    </p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
-                {/* ===== Footer ===== */}
-                <footer className="border-t border-white/10 px-6 md:px-12 lg:px-16 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[#d1e0e7]/50 text-sm">
-                    <div className="flex items-center gap-5">
-                        <a
-                            href="/privacy"
-                            className="hover:text-[#d1e0e7] transition-colors"
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto grid max-w-7xl items-start gap-8 lg:grid-cols-[1fr_1.05fr]">
+                        <div
+                            className={`rounded-[34px] border p-8 shadow-xl ${glass}`}
                         >
-                            الخصوصية
-                        </a>
-                        <a
-                            href="/terms"
-                            className="hover:text-[#d1e0e7] transition-colors"
+                            <h3 className="text-3xl font-black">
+                                {t.featuresTitle}
+                            </h3>
+                            <div className="mt-6 space-y-4">
+                                {t.features.map((feature, index) => (
+                                    <div
+                                        key={index}
+                                        className={`flex items-center gap-4 rounded-2xl border px-4 py-4 ${glass}`}
+                                    >
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white">
+                                            <CheckCircle2 className="h-5 w-5" />
+                                        </div>
+                                        <span className="text-base font-semibold">
+                                            {feature}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div
+                            className={`rounded-[34px] border p-8 shadow-xl ${glass}`}
                         >
-                            الشروط
-                        </a>
-                        <a
-                            href="/contact"
-                            className="hover:text-[#d1e0e7] transition-colors"
-                        >
-                            تواصل معنا
-                        </a>
+                            <h3 className="text-3xl font-black">
+                                {t.ctaTitle}
+                            </h3>
+                            <p
+                                className={`mt-4 text-lg leading-9 ${textMuted}`}
+                            >
+                                {t.ctaText}
+                            </p>
+
+                            <div className="mt-8 flex flex-wrap gap-4">
+                                <Link
+                                    href={
+                                        auth?.user || auth?.admin
+                                            ? "/home"
+                                            : "/register"
+                                    }
+                                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-7 py-4 text-base font-bold text-white shadow-xl transition hover:scale-[1.02]"
+                                >
+                                    {t.ctaPrimary}
+                                    <ArrowRight className="h-5 w-5" />
+                                </Link>
+
+                                <Link
+                                    href="/ContactPage"
+                                    className={`inline-flex items-center gap-2 rounded-2xl border px-7 py-4 text-base font-bold transition ${glass}`}
+                                >
+                                    {t.ctaSecondary}
+                                </Link>
+                            </div>
+                        </div>
                     </div>
-                    <p>© 2025 MindBridge. جميع الحقوق محفوظة.</p>
-                </footer>
-            </div>
+                </section>
+            </main>
         </div>
     );
-};
-
-export default About;
+}

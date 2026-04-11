@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     User,
@@ -6,7 +6,6 @@ import {
     Pen,
     Save,
     Camera,
-    UserCircle2,
     FileText,
     Phone,
     Lock,
@@ -17,15 +16,16 @@ import {
     CheckCircle,
     Shield,
     Sparkles,
-    LogOut,
     Settings,
-    Bell,
 } from "lucide-react";
-import NavBar from "../Components/Nav";
-import Footer from "../Components/Footer";
+import NavBar from "@/Components/NavBar";
+import Footer from "@/Components/Footer";
+import useSitePreferences from "@/hooks/useSitePreferences";
 import toast, { Toaster } from "react-hot-toast";
 
 const UserProfile = () => {
+    const { isDark } = useSitePreferences();
+
     const [isEditing, setIsEditing] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
     const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -41,6 +41,7 @@ const UserProfile = () => {
     const [processing, setProcessing] = useState(false);
     const [processingPw, setProcessingPw] = useState(false);
     const [processingDeactivate, setProcessingDeactivate] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const [data, setData] = useState({
         name: "",
@@ -66,23 +67,34 @@ const UserProfile = () => {
         return meta ? meta.content : "";
     };
 
+    const pageClass = isDark
+        ? "bg-[#081018] text-white"
+        : "bg-[#f7fafc] text-slate-900";
+    const cardClass = isDark
+        ? "bg-white/5 border-white/10 text-white"
+        : "bg-white/90 border-slate-200 text-slate-900";
+    const inputClass = isDark
+        ? "bg-white/5 border-white/10 text-white placeholder:text-white/35"
+        : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400";
+    const mutedClass = isDark ? "text-white/65" : "text-slate-500";
+    const softClass = isDark ? "bg-white/5" : "bg-slate-50";
+
     useEffect(() => {
         const fetchUser = async () => {
+            setLoading(true);
+
             try {
                 const response = await fetch("/api/profile", {
                     headers: {
                         Accept: "application/json",
                         "X-CSRF-TOKEN": getCsrfToken(),
                     },
+                    credentials: "same-origin",
                 });
-                if (!response.ok) {
-                    toast.error(
-                        `Failed to load profile: ${response.statusText}`,
-                    );
-                    return;
-                }
+
                 const result = await response.json();
-                if (result.status === "success") {
+
+                if (response.ok && result.status === "success") {
                     setUser(result.user);
                     setData({
                         name: result.user.name || "",
@@ -92,12 +104,15 @@ const UserProfile = () => {
                         phone: result.user.phone || "",
                     });
                 } else {
-                    toast.error("Failed to load profile.");
+                    toast.error(result.message || "Failed to load profile.");
                 }
-            } catch (error) {
+            } catch {
                 toast.error("Error loading profile.");
+            } finally {
+                setLoading(false);
             }
         };
+
         fetchUser();
     }, []);
 
@@ -121,32 +136,32 @@ const UserProfile = () => {
 
     const handleAvatarUpload = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const validTypes = [
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/gif",
-            ];
-            if (!validTypes.includes(file.type)) {
-                toast.error(
-                    "Invalid file type. Please upload an image (jpeg, png, jpg, gif).",
-                );
-                return;
-            }
-            if (file.size > 2 * 1024 * 1024) {
-                toast.error(
-                    "File too large. Please upload an image smaller than 2MB.",
-                );
-                return;
-            }
-            setData((prev) => ({ ...prev, avatar: file }));
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        const validTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/gif",
+            "image/webp",
+        ];
+        if (!validTypes.includes(file.type)) {
+            toast.error("Invalid file type. Please upload a valid image.");
+            return;
         }
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error(
+                "File too large. Please upload an image smaller than 2MB.",
+            );
+            return;
+        }
+
+        setData((prev) => ({ ...prev, avatar: file }));
+
+        const reader = new FileReader();
+        reader.onloadend = () => setPreviewImage(reader.result);
+        reader.readAsDataURL(file);
     };
 
     const handleSaveProfile = async (e) => {
@@ -155,45 +170,47 @@ const UserProfile = () => {
         setErrors({});
 
         const formData = new FormData();
-        formData.append("name", data.name);
-        formData.append("email", data.email);
-        formData.append("bio", data.bio);
-        formData.append("phone", data.phone);
+        formData.append("name", data.name || "");
+        formData.append("email", data.email || "");
+        formData.append("bio", data.bio || "");
+        formData.append("phone", data.phone || "");
+
         if (data.avatar) {
             formData.append("avatar", data.avatar);
         }
-        formData.append("_method", "POST");
 
         try {
             const response = await fetch("/api/profile", {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": getCsrfToken(),
+                    Accept: "application/json",
                 },
+                credentials: "same-origin",
                 body: formData,
             });
+
             const result = await response.json();
+
             if (response.ok) {
                 setUser(result.user);
                 setData({
-                    name: result.user.name,
-                    email: result.user.email,
+                    name: result.user.name || "",
+                    email: result.user.email || "",
                     avatar: null,
-                    bio: result.user.bio,
-                    phone: result.user.phone,
+                    bio: result.user.bio || "",
+                    phone: result.user.phone || "",
                 });
                 setIsEditing(false);
                 setPreviewImage(null);
-                toast.success(result.status);
+                toast.success(result.status || "Profile updated successfully.");
             } else {
                 setErrors(
                     result.errors || { general: "Failed to update profile." },
                 );
-                toast.error(
-                    "Failed to update profile. Please check the errors.",
-                );
+                toast.error("Failed to update profile.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error updating profile.");
         } finally {
             setProcessing(false);
@@ -213,25 +230,28 @@ const UserProfile = () => {
                     Accept: "application/json",
                     "X-CSRF-TOKEN": getCsrfToken(),
                 },
+                credentials: "same-origin",
                 body: JSON.stringify(pwData),
             });
+
             const result = await response.json();
+
             if (response.ok) {
                 setPwData({
                     current_password: "",
                     password: "",
                     password_confirmation: "",
                 });
-                toast.success(result.status);
+                toast.success(
+                    result.status || "Password updated successfully.",
+                );
             } else {
                 setErrors(
                     result.errors || { general: "Failed to update password." },
                 );
-                toast.error(
-                    "Failed to update password. Please check the errors.",
-                );
+                toast.error("Failed to update password.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error updating password.");
         } finally {
             setProcessingPw(false);
@@ -251,6 +271,7 @@ const UserProfile = () => {
                     Accept: "application/json",
                     "X-CSRF-TOKEN": getCsrfToken(),
                 },
+                credentials: "same-origin",
                 body: JSON.stringify(deactivateData),
             });
 
@@ -265,11 +286,9 @@ const UserProfile = () => {
                         general: "Failed to deactivate account.",
                     },
                 );
-                toast.error(
-                    "Failed to deactivate account. Please check the errors.",
-                );
+                toast.error("Failed to deactivate account.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error deactivating account.");
         } finally {
             setProcessingDeactivate(false);
@@ -282,8 +301,7 @@ const UserProfile = () => {
     };
 
     const displayAvatar =
-        previewImage ||
-        (user?.avatar_url ? user.avatar_url : "/images/avatar.webp");
+        previewImage || user?.avatar_url || "/images/avatar.webp";
 
     const tabs = [
         { id: "profile", label: "Profile", icon: User },
@@ -292,68 +310,66 @@ const UserProfile = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-950 text-white">
+        <div className={`min-h-screen ${pageClass}`}>
             <Toaster position="top-right" />
             <NavBar />
 
-            {/* Hero Section */}
-            <section className="relative pt-32 pb-16 overflow-hidden">
+            <section className="relative overflow-hidden pt-32 pb-12">
                 <div className="absolute inset-0">
-                    <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" />
-                    <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+                    <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-emerald-600/15 blur-3xl" />
+                    <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-cyan-600/15 blur-3xl" />
                 </div>
 
-                <div className="relative max-w-7xl mx-auto px-6">
+                <div className="relative mx-auto max-w-7xl px-6">
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center mb-8"
+                        className="text-center"
                     >
-                        <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-                            <Sparkles className="w-4 h-4 text-emerald-400" />
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+                            <Sparkles className="h-4 w-4 text-emerald-400" />
                             <span className="text-sm font-semibold text-emerald-400">
                                 Your Account
                             </span>
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
+                        <h1 className="mb-4 text-4xl md:text-5xl font-extrabold">
                             Profile{" "}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+                            <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
                                 Settings
                             </span>
                         </h1>
 
-                        <p className="text-xl text-gray-400">
+                        <p className={`text-xl ${mutedClass}`}>
                             Manage your account and preferences
                         </p>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Main Content */}
-            <section className="max-w-6xl mx-auto px-6 pb-20">
-                <div className="grid lg:grid-cols-4 gap-8">
-                    {/* Sidebar - Avatar & Tabs */}
+            <section className="mx-auto max-w-6xl px-6 pb-20">
+                <div className="grid gap-8 lg:grid-cols-4">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="lg:col-span-1"
                     >
-                        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 sticky top-24">
-                            {/* Avatar Section */}
-                            <div className="text-center mb-6">
-                                <div className="relative inline-block mb-4">
+                        <div
+                            className={`sticky top-24 rounded-3xl border p-6 shadow-xl ${cardClass}`}
+                        >
+                            <div className="mb-6 text-center">
+                                <div className="relative mb-4 inline-block">
                                     <img
                                         src={displayAvatar}
                                         alt="Profile Avatar"
-                                        className="w-32 h-32 rounded-full object-cover border-4 border-emerald-500 shadow-lg shadow-emerald-500/20"
+                                        className="h-32 w-32 rounded-full object-cover border-4 border-emerald-500 shadow-lg shadow-emerald-500/20"
                                     />
                                     {isEditing && activeTab === "profile" && (
-                                        <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity rounded-full">
-                                            <Camera className="text-white w-8 h-8" />
+                                        <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity hover:opacity-100">
+                                            <Camera className="h-8 w-8 text-white" />
                                             <input
                                                 type="file"
-                                                accept="image/jpeg,image/png,image/jpg,image/gif"
+                                                accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                                                 className="hidden"
                                                 onChange={handleAvatarUpload}
                                             />
@@ -361,19 +377,14 @@ const UserProfile = () => {
                                     )}
                                 </div>
 
-                                {user && (
-                                    <>
-                                        <h2 className="text-xl font-bold mb-1">
-                                            {data.name}
-                                        </h2>
-                                        <p className="text-sm text-gray-400">
-                                            {data.email}
-                                        </p>
-                                    </>
-                                )}
+                                <h2 className="mb-1 text-xl font-bold">
+                                    {data.name || "User"}
+                                </h2>
+                                <p className={`text-sm ${mutedClass}`}>
+                                    {data.email || "No email"}
+                                </p>
                             </div>
 
-                            {/* Tabs Navigation */}
                             <div className="space-y-2">
                                 {tabs.map((tab) => (
                                     <button
@@ -382,23 +393,26 @@ const UserProfile = () => {
                                             setActiveTab(tab.id);
                                             setIsEditing(false);
                                         }}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                                        className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 font-medium transition-all ${
                                             activeTab === tab.id
                                                 ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg"
-                                                : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                                                : isDark
+                                                  ? "text-white/75 hover:bg-white/5 hover:text-white"
+                                                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                                         }`}
                                     >
-                                        <tab.icon className="w-5 h-5" />
+                                        <tab.icon className="h-5 w-5" />
                                         {tab.label}
                                     </button>
                                 ))}
                             </div>
 
-                            {/* Member Info */}
-                            {user && (
-                                <div className="mt-6 pt-6 border-t border-gray-700 text-center text-sm text-gray-400">
+                            {user?.created_at && (
+                                <div
+                                    className={`mt-6 border-t pt-6 text-center text-sm ${mutedClass} ${isDark ? "border-white/10" : "border-slate-200"}`}
+                                >
                                     <p>Member since</p>
-                                    <p className="font-semibold text-white mt-1">
+                                    <p className="mt-1 font-semibold text-current">
                                         {new Date(
                                             user.created_at,
                                         ).toLocaleDateString()}
@@ -408,456 +422,498 @@ const UserProfile = () => {
                         </div>
                     </motion.div>
 
-                    {/* Main Content Area */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="lg:col-span-3"
                     >
-                        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8">
-                            {/* Header with Edit Button */}
-                            {activeTab === "profile" && (
-                                <div className="flex items-center justify-between mb-8">
-                                    <h2 className="text-2xl font-bold">
-                                        Profile Information
-                                    </h2>
-                                    {!isEditing ? (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-                                        >
-                                            <Pen className="w-4 h-4" />
-                                            Edit Profile
-                                        </button>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    setIsEditing(false);
-                                                    setPreviewImage(null);
-                                                    setData((prev) => ({
-                                                        ...prev,
-                                                        avatar: null,
-                                                    }));
-                                                }}
-                                                className="px-4 py-2 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={handleSaveProfile}
-                                                disabled={processing}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                {processing
-                                                    ? "Saving..."
-                                                    : "Save Changes"}
-                                            </button>
-                                        </div>
-                                    )}
+                        <div
+                            className={`rounded-3xl border p-8 shadow-xl ${cardClass}`}
+                        >
+                            {loading ? (
+                                <div className="py-20 text-center">
+                                    <p className={mutedClass}>
+                                        Loading profile...
+                                    </p>
                                 </div>
-                            )}
+                            ) : (
+                                <>
+                                    {activeTab === "profile" && (
+                                        <div className="space-y-6">
+                                            <div className="mb-8 flex items-center justify-between">
+                                                <h2 className="text-2xl font-bold">
+                                                    Profile Information
+                                                </h2>
 
-                            {/* Tab Content */}
-                            <AnimatePresence mode="wait">
-                                {activeTab === "profile" && (
-                                    <motion.div
-                                        key="profile"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        className="space-y-6"
-                                    >
-                                        {isEditing ? (
-                                            <>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                        Full Name
-                                                    </label>
-                                                    <div className="relative">
-                                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                        <input
-                                                            type="text"
-                                                            name="name"
-                                                            value={data.name}
-                                                            onChange={
-                                                                handleInputChange
+                                                {!isEditing ? (
+                                                    <button
+                                                        onClick={() =>
+                                                            setIsEditing(true)
+                                                        }
+                                                        className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 font-semibold text-white shadow-lg"
+                                                    >
+                                                        <Pen className="h-4 w-4" />
+                                                        Edit Profile
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setIsEditing(
+                                                                    false,
+                                                                );
+                                                                setPreviewImage(
+                                                                    null,
+                                                                );
+                                                                setData(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        avatar: null,
+                                                                    }),
+                                                                );
+                                                            }}
+                                                            className={`rounded-2xl px-4 py-2.5 font-semibold ${
+                                                                isDark
+                                                                    ? "bg-white/5 text-white"
+                                                                    : "bg-slate-100 text-slate-800"
+                                                            }`}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={
+                                                                handleSaveProfile
                                                             }
-                                                            className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                        />
+                                                            disabled={
+                                                                processing
+                                                            }
+                                                            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 font-semibold text-white shadow-lg disabled:opacity-50"
+                                                        >
+                                                            <Save className="h-4 w-4" />
+                                                            {processing
+                                                                ? "Saving..."
+                                                                : "Save Changes"}
+                                                        </button>
                                                     </div>
-                                                    {errors.name && (
-                                                        <p className="mt-1 text-red-400 text-sm">
-                                                            {errors.name}
-                                                        </p>
-                                                    )}
-                                                </div>
+                                                )}
+                                            </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                        Email Address
-                                                    </label>
-                                                    <div className="relative">
-                                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                        <input
-                                                            type="email"
-                                                            name="email"
-                                                            value={data.email}
-                                                            onChange={
-                                                                handleInputChange
-                                                            }
-                                                            className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                        />
+                                            {isEditing ? (
+                                                <>
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium">
+                                                            Full Name
+                                                        </label>
+                                                        <div className="relative">
+                                                            <User
+                                                                className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                name="name"
+                                                                value={
+                                                                    data.name
+                                                                }
+                                                                onChange={
+                                                                    handleInputChange
+                                                                }
+                                                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${inputClass}`}
+                                                            />
+                                                        </div>
+                                                        {errors.name && (
+                                                            <p className="mt-1 text-sm text-red-400">
+                                                                {errors.name}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    {errors.email && (
-                                                        <p className="mt-1 text-red-400 text-sm">
-                                                            {errors.email}
-                                                        </p>
-                                                    )}
-                                                </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                        Phone Number
-                                                    </label>
-                                                    <div className="relative">
-                                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                        <input
-                                                            type="tel"
-                                                            name="phone"
-                                                            value={data.phone}
-                                                            onChange={
-                                                                handleInputChange
-                                                            }
-                                                            className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                        />
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium">
+                                                            Email Address
+                                                        </label>
+                                                        <div className="relative">
+                                                            <Mail
+                                                                className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                            />
+                                                            <input
+                                                                type="email"
+                                                                name="email"
+                                                                value={
+                                                                    data.email
+                                                                }
+                                                                onChange={
+                                                                    handleInputChange
+                                                                }
+                                                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${inputClass}`}
+                                                            />
+                                                        </div>
+                                                        {errors.email && (
+                                                            <p className="mt-1 text-sm text-red-400">
+                                                                {errors.email}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    {errors.phone && (
-                                                        <p className="mt-1 text-red-400 text-sm">
-                                                            {errors.phone}
-                                                        </p>
-                                                    )}
-                                                </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                        Bio
-                                                    </label>
-                                                    <div className="relative">
-                                                        <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                                        <textarea
-                                                            name="bio"
-                                                            value={data.bio}
-                                                            onChange={
-                                                                handleInputChange
-                                                            }
-                                                            rows="4"
-                                                            className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                                                            placeholder="Tell us about yourself..."
-                                                        />
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium">
+                                                            Phone Number
+                                                        </label>
+                                                        <div className="relative">
+                                                            <Phone
+                                                                className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                name="phone"
+                                                                value={
+                                                                    data.phone
+                                                                }
+                                                                onChange={
+                                                                    handleInputChange
+                                                                }
+                                                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none ${inputClass}`}
+                                                            />
+                                                        </div>
+                                                        {errors.phone && (
+                                                            <p className="mt-1 text-sm text-red-400">
+                                                                {errors.phone}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    {errors.bio && (
-                                                        <p className="mt-1 text-red-400 text-sm">
-                                                            {errors.bio}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </>
-                                        ) : (
-                                            user && (
-                                                <div className="space-y-6">
-                                                    <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-xl">
-                                                        <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                                                            <User className="w-6 h-6 text-emerald-400" />
+
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-medium">
+                                                            Bio
+                                                        </label>
+                                                        <div className="relative">
+                                                            <FileText
+                                                                className={`absolute left-3 top-3 h-5 w-5 ${mutedClass}`}
+                                                            />
+                                                            <textarea
+                                                                name="bio"
+                                                                rows="4"
+                                                                value={data.bio}
+                                                                onChange={
+                                                                    handleInputChange
+                                                                }
+                                                                className={`w-full rounded-2xl border py-3 pl-10 pr-4 outline-none resize-none ${inputClass}`}
+                                                                placeholder="Tell us about yourself..."
+                                                            />
+                                                        </div>
+                                                        {errors.bio && (
+                                                            <p className="mt-1 text-sm text-red-400">
+                                                                {errors.bio}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="space-y-5">
+                                                    <div
+                                                        className={`flex items-center gap-4 rounded-2xl p-4 ${softClass}`}
+                                                    >
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15">
+                                                            <User className="h-6 w-6 text-emerald-400" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">
+                                                            <p
+                                                                className={`text-sm ${mutedClass}`}
+                                                            >
                                                                 Full Name
                                                             </p>
                                                             <p className="text-lg font-semibold">
-                                                                {data.name}
+                                                                {data.name ||
+                                                                    "—"}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-xl">
-                                                        <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                                                            <Mail className="w-6 h-6 text-emerald-400" />
+                                                    <div
+                                                        className={`flex items-center gap-4 rounded-2xl p-4 ${softClass}`}
+                                                    >
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15">
+                                                            <Mail className="h-6 w-6 text-emerald-400" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400">
+                                                            <p
+                                                                className={`text-sm ${mutedClass}`}
+                                                            >
                                                                 Email Address
                                                             </p>
                                                             <p className="text-lg font-semibold">
-                                                                {data.email}
+                                                                {data.email ||
+                                                                    "—"}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    {data.phone && (
-                                                        <div className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-xl">
-                                                            <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                                                                <Phone className="w-6 h-6 text-emerald-400" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm text-gray-400">
-                                                                    Phone Number
-                                                                </p>
-                                                                <p className="text-lg font-semibold">
-                                                                    {data.phone}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex items-start gap-4 p-4 bg-gray-900/50 rounded-xl">
-                                                        <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                                                            <FileText className="w-6 h-6 text-emerald-400" />
+                                                    <div
+                                                        className={`flex items-center gap-4 rounded-2xl p-4 ${softClass}`}
+                                                    >
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15">
+                                                            <Phone className="h-6 w-6 text-emerald-400" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm text-gray-400 mb-1">
+                                                            <p
+                                                                className={`text-sm ${mutedClass}`}
+                                                            >
+                                                                Phone Number
+                                                            </p>
+                                                            <p className="text-lg font-semibold">
+                                                                {data.phone ||
+                                                                    "Not provided"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        className={`flex items-start gap-4 rounded-2xl p-4 ${softClass}`}
+                                                    >
+                                                        <div className="mt-1 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15">
+                                                            <FileText className="h-6 w-6 text-emerald-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p
+                                                                className={`text-sm ${mutedClass}`}
+                                                            >
                                                                 Bio
                                                             </p>
-                                                            <p className="text-gray-300">
+                                                            <p className="text-base leading-7">
                                                                 {data.bio ||
                                                                     "No bio available"}
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )
-                                        )}
-                                    </motion.div>
-                                )}
-
-                                {activeTab === "security" && (
-                                    <motion.div
-                                        key="security"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                    >
-                                        <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-                                            <Lock className="w-6 h-6 text-emerald-400" />
-                                            Change Password
-                                        </h2>
-
-                                        <form
-                                            onSubmit={handleUpdatePassword}
-                                            className="space-y-6"
-                                        >
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Current Password
-                                                </label>
-                                                <div className="relative">
-                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                    <input
-                                                        type={
-                                                            showCurrentPassword
-                                                                ? "text"
-                                                                : "password"
-                                                        }
-                                                        name="current_password"
-                                                        value={
-                                                            pwData.current_password
-                                                        }
-                                                        onChange={
-                                                            handlePasswordChange
-                                                        }
-                                                        className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setShowCurrentPassword(
-                                                                !showCurrentPassword,
-                                                            )
-                                                        }
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                                                    >
-                                                        {showCurrentPassword ? (
-                                                            <EyeOff className="w-5 h-5" />
-                                                        ) : (
-                                                            <Eye className="w-5 h-5" />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                                {errors.current_password && (
-                                                    <p className="mt-1 text-red-400 text-sm">
-                                                        {
-                                                            errors.current_password
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    New Password
-                                                </label>
-                                                <div className="relative">
-                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                    <input
-                                                        type={
-                                                            showNewPassword
-                                                                ? "text"
-                                                                : "password"
-                                                        }
-                                                        name="password"
-                                                        value={pwData.password}
-                                                        onChange={
-                                                            handlePasswordChange
-                                                        }
-                                                        className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setShowNewPassword(
-                                                                !showNewPassword,
-                                                            )
-                                                        }
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                                                    >
-                                                        {showNewPassword ? (
-                                                            <EyeOff className="w-5 h-5" />
-                                                        ) : (
-                                                            <Eye className="w-5 h-5" />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                                {errors.password && (
-                                                    <p className="mt-1 text-red-400 text-sm">
-                                                        {errors.password}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Confirm New Password
-                                                </label>
-                                                <div className="relative">
-                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                                    <input
-                                                        type={
-                                                            showConfirmPassword
-                                                                ? "text"
-                                                                : "password"
-                                                        }
-                                                        name="password_confirmation"
-                                                        value={
-                                                            pwData.password_confirmation
-                                                        }
-                                                        onChange={
-                                                            handlePasswordChange
-                                                        }
-                                                        className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setShowConfirmPassword(
-                                                                !showConfirmPassword,
-                                                            )
-                                                        }
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                                                    >
-                                                        {showConfirmPassword ? (
-                                                            <EyeOff className="w-5 h-5" />
-                                                        ) : (
-                                                            <Eye className="w-5 h-5" />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                type="submit"
-                                                disabled={processingPw}
-                                                className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                            >
-                                                <Shield className="w-5 h-5" />
-                                                {processingPw
-                                                    ? "Updating..."
-                                                    : "Update Password"}
-                                            </button>
-                                        </form>
-                                    </motion.div>
-                                )}
-
-                                {activeTab === "account" && (
-                                    <motion.div
-                                        key="account"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                    >
-                                        <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-                                            <Settings className="w-6 h-6 text-emerald-400" />
-                                            Account Management
-                                        </h2>
-
-                                        <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6">
-                                            <div className="flex items-start gap-4 mb-6">
-                                                <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                                                    <AlertTriangle className="w-6 h-6 text-red-400" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-red-400 mb-2">
-                                                        Deactivate Account
-                                                    </h3>
-                                                    <p className="text-gray-300 mb-4">
-                                                        Deactivating your
-                                                        account will make your
-                                                        profile and content
-                                                        inaccessible. You can
-                                                        reactivate your account
-                                                        at any time by logging
-                                                        in again.
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() =>
-                                                    setShowDeactivateModal(true)
-                                                }
-                                                className="w-full py-3 px-4 bg-transparent border-2 border-red-500 text-red-400 rounded-xl font-semibold hover:bg-red-500/10 transition-all"
-                                            >
-                                                Deactivate Account
-                                            </button>
+                                            )}
                                         </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                    )}
+
+                                    {activeTab === "security" && (
+                                        <div>
+                                            <h2 className="mb-8 flex items-center gap-2 text-2xl font-bold">
+                                                <Lock className="h-6 w-6 text-emerald-400" />
+                                                Change Password
+                                            </h2>
+
+                                            <form
+                                                onSubmit={handleUpdatePassword}
+                                                className="space-y-6"
+                                            >
+                                                <div>
+                                                    <label className="mb-2 block text-sm font-medium">
+                                                        Current Password
+                                                    </label>
+                                                    <div className="relative">
+                                                        <Lock
+                                                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                        />
+                                                        <input
+                                                            type={
+                                                                showCurrentPassword
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            name="current_password"
+                                                            value={
+                                                                pwData.current_password
+                                                            }
+                                                            onChange={
+                                                                handlePasswordChange
+                                                            }
+                                                            className={`w-full rounded-2xl border py-3 pl-10 pr-12 outline-none ${inputClass}`}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowCurrentPassword(
+                                                                    !showCurrentPassword,
+                                                                )
+                                                            }
+                                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedClass}`}
+                                                        >
+                                                            {showCurrentPassword ? (
+                                                                <EyeOff className="h-5 w-5" />
+                                                            ) : (
+                                                                <Eye className="h-5 w-5" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    {errors.current_password && (
+                                                        <p className="mt-1 text-sm text-red-400">
+                                                            {
+                                                                errors.current_password
+                                                            }
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <label className="mb-2 block text-sm font-medium">
+                                                        New Password
+                                                    </label>
+                                                    <div className="relative">
+                                                        <Lock
+                                                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                        />
+                                                        <input
+                                                            type={
+                                                                showNewPassword
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            name="password"
+                                                            value={
+                                                                pwData.password
+                                                            }
+                                                            onChange={
+                                                                handlePasswordChange
+                                                            }
+                                                            className={`w-full rounded-2xl border py-3 pl-10 pr-12 outline-none ${inputClass}`}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowNewPassword(
+                                                                    !showNewPassword,
+                                                                )
+                                                            }
+                                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedClass}`}
+                                                        >
+                                                            {showNewPassword ? (
+                                                                <EyeOff className="h-5 w-5" />
+                                                            ) : (
+                                                                <Eye className="h-5 w-5" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    {errors.password && (
+                                                        <p className="mt-1 text-sm text-red-400">
+                                                            {errors.password}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <label className="mb-2 block text-sm font-medium">
+                                                        Confirm New Password
+                                                    </label>
+                                                    <div className="relative">
+                                                        <Lock
+                                                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                                        />
+                                                        <input
+                                                            type={
+                                                                showConfirmPassword
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            name="password_confirmation"
+                                                            value={
+                                                                pwData.password_confirmation
+                                                            }
+                                                            onChange={
+                                                                handlePasswordChange
+                                                            }
+                                                            className={`w-full rounded-2xl border py-3 pl-10 pr-12 outline-none ${inputClass}`}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowConfirmPassword(
+                                                                    !showConfirmPassword,
+                                                                )
+                                                            }
+                                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedClass}`}
+                                                        >
+                                                            {showConfirmPassword ? (
+                                                                <EyeOff className="h-5 w-5" />
+                                                            ) : (
+                                                                <Eye className="h-5 w-5" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="submit"
+                                                    disabled={processingPw}
+                                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 font-semibold text-white shadow-lg disabled:opacity-50"
+                                                >
+                                                    <Shield className="h-5 w-5" />
+                                                    {processingPw
+                                                        ? "Updating..."
+                                                        : "Update Password"}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    )}
+
+                                    {activeTab === "account" && (
+                                        <div>
+                                            <h2 className="mb-8 flex items-center gap-2 text-2xl font-bold">
+                                                <Settings className="h-6 w-6 text-emerald-400" />
+                                                Account Management
+                                            </h2>
+
+                                            <div className="rounded-3xl border border-red-500/25 bg-red-500/10 p-6">
+                                                <div className="mb-6 flex items-start gap-4">
+                                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/20">
+                                                        <AlertTriangle className="h-6 w-6 text-red-400" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="mb-2 text-lg font-bold text-red-400">
+                                                            Deactivate Account
+                                                        </h3>
+                                                        <p className="text-sm leading-7 text-gray-300">
+                                                            Deactivating your
+                                                            account will make
+                                                            your profile and
+                                                            content
+                                                            inaccessible.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() =>
+                                                        setShowDeactivateModal(
+                                                            true,
+                                                        )
+                                                    }
+                                                    className="w-full rounded-2xl border-2 border-red-500 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-500/10"
+                                                >
+                                                    Deactivate Account
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Deactivate Modal */}
             <AnimatePresence>
                 {showDeactivateModal && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
                         onClick={() => setShowDeactivateModal(false)}
                     >
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.92, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6"
+                            exit={{ scale: 0.92, opacity: 0 }}
+                            className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${cardClass}`}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-                                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                            <div className="mb-6 flex items-center gap-3">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/20">
+                                    <AlertTriangle className="h-6 w-6 text-red-400" />
                                 </div>
                                 <h3 className="text-xl font-bold">
                                     Deactivate Account
@@ -869,11 +925,13 @@ const UserProfile = () => {
                                 className="space-y-4"
                             >
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    <label className="mb-2 block text-sm font-medium">
                                         Confirm Password
                                     </label>
                                     <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <Lock
+                                            className={`absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 ${mutedClass}`}
+                                        />
                                         <input
                                             type={
                                                 showDeactivatePassword
@@ -884,7 +942,7 @@ const UserProfile = () => {
                                             value={deactivateData.password}
                                             onChange={handleDeactivateChange}
                                             required
-                                            className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                                            className={`w-full rounded-2xl border py-3 pl-10 pr-12 outline-none ${inputClass}`}
                                         />
                                         <button
                                             type="button"
@@ -893,24 +951,24 @@ const UserProfile = () => {
                                                     !showDeactivatePassword,
                                                 )
                                             }
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                            className={`absolute right-3 top-1/2 -translate-y-1/2 ${mutedClass}`}
                                         >
                                             {showDeactivatePassword ? (
-                                                <EyeOff className="w-5 h-5" />
+                                                <EyeOff className="h-5 w-5" />
                                             ) : (
-                                                <Eye className="w-5 h-5" />
+                                                <Eye className="h-5 w-5" />
                                             )}
                                         </button>
                                     </div>
                                     {errors.password && (
-                                        <p className="mt-1 text-red-400 text-sm">
+                                        <p className="mt-1 text-sm text-red-400">
                                             {errors.password}
                                         </p>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    <label className="mb-2 block text-sm font-medium">
                                         Reason for Deactivation (Optional)
                                     </label>
                                     <textarea
@@ -920,7 +978,7 @@ const UserProfile = () => {
                                         }
                                         onChange={handleDeactivateChange}
                                         rows="3"
-                                        className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                        className={`w-full rounded-2xl border px-4 py-3 outline-none resize-none ${inputClass}`}
                                         placeholder="Tell us why you're leaving..."
                                     />
                                 </div>
@@ -931,14 +989,19 @@ const UserProfile = () => {
                                         onClick={() =>
                                             setShowDeactivateModal(false)
                                         }
-                                        className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
+                                        className={`flex-1 rounded-2xl px-4 py-3 font-semibold ${
+                                            isDark
+                                                ? "bg-white/5 text-white"
+                                                : "bg-slate-100 text-slate-800"
+                                        }`}
                                     >
                                         Cancel
                                     </button>
+
                                     <button
                                         type="submit"
                                         disabled={processingDeactivate}
-                                        className="flex-1 py-3 px-4 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all disabled:opacity-50"
+                                        className="flex-1 rounded-2xl bg-red-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
                                     >
                                         {processingDeactivate
                                             ? "Processing..."
@@ -951,58 +1014,36 @@ const UserProfile = () => {
                 )}
             </AnimatePresence>
 
-            {/* Success Modal */}
             <AnimatePresence>
                 {showDeactivationSuccessModal && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
                     >
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.92, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-gray-800 border border-emerald-500/30 rounded-2xl max-w-md w-full p-8 text-center"
+                            exit={{ scale: 0.92, opacity: 0 }}
+                            className={`w-full max-w-md rounded-3xl border p-8 text-center shadow-2xl ${cardClass}`}
                         >
-                            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle className="w-10 h-10 text-emerald-400" />
+                            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20">
+                                <CheckCircle className="h-10 w-10 text-emerald-400" />
                             </div>
 
-                            <h3 className="text-2xl font-bold mb-4">
+                            <h3 className="mb-4 text-2xl font-bold">
                                 Account Deactivated
                             </h3>
-                            <p className="text-gray-300 mb-6">
+                            <p
+                                className={`mb-6 text-sm leading-7 ${mutedClass}`}
+                            >
                                 Your account has been successfully deactivated.
-                                If you need any assistance, please contact our
-                                support team:
                             </p>
-
-                            <div className="bg-gray-900/50 rounded-xl p-4 mb-6 space-y-3 text-left">
-                                <div className="flex items-center gap-3">
-                                    <Phone className="w-5 h-5 text-emerald-400" />
-                                    <span className="text-gray-300">
-                                        <strong className="text-white">
-                                            Phone:
-                                        </strong>{" "}
-                                        +1234567890
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Mail className="w-5 h-5 text-emerald-400" />
-                                    <span className="text-gray-300">
-                                        <strong className="text-white">
-                                            Email:
-                                        </strong>{" "}
-                                        Mind Gate@support.com
-                                    </span>
-                                </div>
-                            </div>
 
                             <button
                                 onClick={handleDeactivationSuccessClose}
-                                className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                                className="w-full rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 font-semibold text-white shadow-lg"
                             >
                                 OK
                             </button>

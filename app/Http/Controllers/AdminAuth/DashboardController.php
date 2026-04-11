@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\AdminAuth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Contact;
 use App\Models\HeroSection;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -25,113 +25,116 @@ class DashboardController extends Controller
                 return redirect()->route('admin.login');
             }
 
-            $stats = [
-                'users' => User::count(),
-                'active_users' => User::where('is_active', 1)->count(),
-                'inactive_users' => User::where('is_active', 0)->count(),
-                'messages' => Contact::count(),
-                'unread_messages' => Contact::where('is_read', 0)->count(),
-                'hero_sections' => HeroSection::count(),
-                'active_hero_sections' => HeroSection::where('is_active', 1)->count(),
-                'inactive_hero_sections' => HeroSection::where('is_active', 0)->count(),
-            ];
-
-            $latestUsers = User::select([
-                'id',
-                'full_name as name',
-                'email',
-                'is_active',
-                'created_at',
-            ])
-                ->latest('created_at')
-                ->take(5)
-                ->get();
-
-            $latestMessages = Contact::select([
-                'id',
+            $userColumns = Schema::hasTable('users') ? Schema::getColumnListing('users') : [];
+            $nameColumn = $this->resolveFirstExistingColumn($userColumns, [
+                'full_name',
                 'name',
+                'username',
+                'user_name',
+            ]);
+            $emailColumn = $this->resolveFirstExistingColumn($userColumns, [
                 'email',
-                'subject',
-                'message',
-                'is_read',
-                'created_at',
-            ])
-                ->latest('created_at')
-                ->take(5)
-                ->get();
+                'user_email',
+                'mail',
+            ]);
+            $activeColumn = in_array('is_active', $userColumns, true) ? 'is_active' : null;
+            $createdColumn = in_array('created_at', $userColumns, true) ? 'created_at' : null;
 
-            $latestHeroSections = HeroSection::select([
-                'id',
-                'title',
-                'subtitle',
-                'image',
-                'is_active',
-                'created_at',
-            ])
-                ->latest('created_at')
-                ->take(4)
-                ->get()
-                ->map(function ($hero) {
-                    return [
-                        'id' => $hero->id,
-                        'title' => $hero->title,
-                        'subtitle' => $hero->subtitle,
-                        'image' => $hero->image ? Storage::url($hero->image) : null,
-                        'is_active' => (bool) $hero->is_active,
-                        'created_at' => $hero->created_at,
-                    ];
-                });
-
-            $chartDays = collect(range(6, 0))->map(function ($daysAgo) {
-                $date = Carbon::today()->subDays($daysAgo);
-
-                return [
-                    'label' => $date->format('D'),
-                    'date' => $date->toDateString(),
-                ];
-            });
-
-            $usersChart = $chartDays->map(function ($day) {
-                return [
-                    'label' => $day['label'],
-                    'value' => User::whereDate('created_at', $day['date'])->count(),
-                ];
-            })->values();
-
-            $messagesChart = $chartDays->map(function ($day) {
-                return [
-                    'label' => $day['label'],
-                    'value' => Contact::whereDate('created_at', $day['date'])->count(),
-                ];
-            })->values();
-
-            $heroChart = [
-                [
-                    'label' => 'Active',
-                    'value' => HeroSection::where('is_active', 1)->count(),
-                ],
-                [
-                    'label' => 'Inactive',
-                    'value' => HeroSection::where('is_active', 0)->count(),
-                ],
+            $stats = [
+                'users' => Schema::hasTable('users') ? User::count() : 0,
+                'inactive_users' => Schema::hasTable('users') && $activeColumn
+                    ? User::where($activeColumn, 0)->count()
+                    : 0,
+                'messages' => Schema::hasTable('contacts') ? Contact::count() : 0,
+                'unread_messages' => Schema::hasTable('contacts') && Schema::hasColumn('contacts', 'is_read')
+                    ? Contact::where('is_read', 0)->count()
+                    : 0,
+                'specialists' => Schema::hasTable('specialists')
+                    ? DB::table('specialists')->where('is_active', 1)->count()
+                    : 0,
+                'resources' => Schema::hasTable('mental_resources')
+                    ? DB::table('mental_resources')->where('is_published', 1)->count()
+                    : 0,
+                'assessments' => Schema::hasTable('assessment_results')
+                    ? DB::table('assessment_results')->count()
+                    : 0,
+                'checkins' => Schema::hasTable('daily_checkins')
+                    ? DB::table('daily_checkins')->count()
+                    : 0,
+                'organizations' => Schema::hasTable('organizations')
+                    ? DB::table('organizations')->count()
+                    : 0,
+                'hero_sections' => Schema::hasTable('hero_sections')
+                    ? HeroSection::count()
+                    : 0,
             ];
+
+            $latestUsers = collect();
+
+            if (Schema::hasTable('users')) {
+                $select = ['id'];
+
+                if ($nameColumn) {
+                    $select[] = DB::raw("`{$nameColumn}` as name");
+                } else {
+                    $select[] = DB::raw("'User' as name");
+                }
+
+                if ($emailColumn) {
+                    $select[] = DB::raw("`{$emailColumn}` as email");
+                } else {
+                    $select[] = DB::raw("'' as email");
+                }
+
+                if ($activeColumn) {
+                    $select[] = DB::raw("`{$activeColumn}` as is_active");
+                } else {
+                    $select[] = DB::raw("1 as is_active");
+                }
+
+                if ($createdColumn) {
+                    $select[] = $createdColumn;
+                }
+
+                $latestUsersQuery = User::query()->select($select);
+
+                if ($createdColumn) {
+                    $latestUsersQuery->latest($createdColumn);
+                } else {
+                    $latestUsersQuery->latest('id');
+                }
+
+                $latestUsers = $latestUsersQuery->take(5)->get();
+            }
+
+            $latestMessages = collect();
+
+            if (Schema::hasTable('contacts')) {
+                $contactSelect = ['id', 'name', 'email', 'subject', 'message'];
+
+                if (Schema::hasColumn('contacts', 'is_read')) {
+                    $contactSelect[] = 'is_read';
+                }
+
+                if (Schema::hasColumn('contacts', 'created_at')) {
+                    $contactSelect[] = 'created_at';
+                }
+
+                $latestMessages = Contact::select($contactSelect)
+                    ->latest('id')
+                    ->take(5)
+                    ->get();
+            }
 
             return Inertia::render('Admin/Dashboard', [
-                'auth' => [
-                    'user' => [
-                        'id' => $admin->id,
-                        'name' => $admin->name,
-                        'email' => $admin->email,
-                        'avatar' => null,
-                    ],
+                'admin' => [
+                    'id' => $admin->id,
+                    'name' => $admin->name ?? 'Admin',
+                    'email' => $admin->email ?? null,
                 ],
                 'stats' => $stats,
-                'latestUsers' => $latestUsers,
-                'latestMessages' => $latestMessages,
-                'latestHeroSections' => $latestHeroSections,
-                'usersChart' => $usersChart,
-                'messagesChart' => $messagesChart,
-                'heroChart' => $heroChart,
+                'latest_users' => $latestUsers,
+                'latest_messages' => $latestMessages,
                 'flash' => [
                     'success' => session('success'),
                     'error' => session('error'),
@@ -148,5 +151,16 @@ class DashboardController extends Controller
                 'email' => 'Dashboard failed to load. Check laravel.log.',
             ]);
         }
+    }
+
+    private function resolveFirstExistingColumn(array $columns, array $candidates): ?string
+    {
+        foreach ($candidates as $candidate) {
+            if (in_array($candidate, $columns, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

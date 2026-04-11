@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { Head, useForm } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    ArrowRight,
-    ArrowLeft,
     Mail,
     Phone,
     Send,
@@ -12,22 +11,18 @@ import {
     MessageCircle,
     Headphones,
     Sparkles,
-    Brain,
-    Zap,
-    HeartHandshake,
+    Shield,
+    Clock3,
+    ArrowRight,
 } from "lucide-react";
+import NavV2 from "@/Components/NavBar";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-const Contact = ({ auth }) => {
-    const canGoBack = window.history.length > 2;
+axios.defaults.baseURL = window.location.origin;
+
+export default function ContactPage() {
+    const { isDark, isArabic } = useSitePreferences();
     const [notification, setNotification] = useState(null);
-    const backgroundImage = "/images/word.png";
-
-    useEffect(() => {
-        if (notification) {
-            const timer = setTimeout(() => setNotification(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [notification]);
 
     const { data, setData, processing, errors, reset, setError, clearErrors } =
         useForm({
@@ -37,31 +32,110 @@ const Contact = ({ auth }) => {
             message: "",
         });
 
+    useEffect(() => {
+        if (!notification) return;
+        const timer = setTimeout(() => setNotification(null), 5000);
+        return () => clearTimeout(timer);
+    }, [notification]);
+
+    const t = useMemo(
+        () => ({
+            title: isArabic
+                ? "تواصل معنا - Mind Gate"
+                : "Contact Us - Mind Gate",
+            badge: isArabic
+                ? "فريق دعم جاهز للمساعدة"
+                : "A support team ready to help",
+            heading: isArabic ? "دعنا نسمع منك" : "Let us hear from you",
+            intro: isArabic
+                ? "إذا كان لديك سؤال، استفسار، أو تحتاج مساعدة بخصوص المنصة، أرسل لنا رسالتك وسنرد عليك بأقرب وقت."
+                : "If you have a question, feedback, or need help with the platform, send us a message and we will get back to you soon.",
+            emailCard: isArabic ? "راسلنا عبر البريد" : "Email us",
+            emailDesc: isArabic
+                ? "سنرد خلال 24 ساعة في أيام العمل."
+                : "We reply within 24 business hours.",
+            phoneCard: isArabic ? "اتصل بنا" : "Call us",
+            phoneDesc: isArabic
+                ? "دعم متاح خلال أوقات العمل الرسمية."
+                : "Support is available during business hours.",
+            secureTitle: isArabic ? "تواصل آمن" : "Secure communication",
+            secureText: isArabic
+                ? "نحترم خصوصيتك ونتعامل مع رسائلك بسرية ووضوح."
+                : "We respect your privacy and handle your messages with clarity and care.",
+            formTitle: isArabic ? "أرسل رسالتك" : "Send your message",
+            formText: isArabic
+                ? "املأ النموذج التالي وسنتواصل معك في أقرب وقت."
+                : "Fill out the form below and we will contact you shortly.",
+            name: isArabic ? "الاسم الكامل" : "Full name",
+            email: isArabic ? "البريد الإلكتروني" : "Email address",
+            subject: isArabic ? "الموضوع" : "Subject",
+            message: isArabic ? "الرسالة" : "Message",
+            submit: isArabic ? "إرسال الرسالة" : "Send message",
+            sending: isArabic ? "جارٍ الإرسال..." : "Sending...",
+            faqTitle: isArabic ? "أسئلة شائعة" : "Frequently asked questions",
+            success: isArabic
+                ? "تم إرسال رسالتك بنجاح."
+                : "Your message has been sent successfully.",
+            validation: isArabic
+                ? "يرجى تصحيح الأخطاء في النموذج."
+                : "Please fix the form errors.",
+            failed: isArabic
+                ? "حدث خطأ أثناء الإرسال."
+                : "Something went wrong while sending.",
+            q1: isArabic ? "كم يستغرق الرد؟" : "How long does a response take?",
+            a1: isArabic
+                ? "عادةً خلال 24 ساعة في أيام العمل."
+                : "Usually within 24 business hours.",
+            q2: isArabic ? "هل بياناتي آمنة؟" : "Is my data safe?",
+            a2: isArabic
+                ? "نعم، نتعامل مع الرسائل بسرية واحترام."
+                : "Yes, we handle messages with privacy and care.",
+            q3: isArabic
+                ? "هل الدعم مخصص للأفراد فقط؟"
+                : "Is support only for individuals?",
+            a3: isArabic
+                ? "لا، نوفر أيضًا حلولًا للمؤسسات والشركات."
+                : "No, we also support organizations and companies.",
+        }),
+        [isArabic],
+    );
+
+    const pageBg = isDark
+        ? "bg-[#081018] text-white"
+        : "bg-[#f6fafc] text-slate-900";
+
+    const glass = isDark
+        ? "bg-white/5 border-white/10"
+        : "bg-white/85 border-slate-200";
+
+    const textMuted = isDark ? "text-white/70" : "text-slate-600";
+
     const validate = () => {
         const newErrors = {};
-        if (!data.name) newErrors.name = "الاسم مطلوب";
-        else if (data.name.length < 2)
-            newErrors.name = "الاسم يجب أن يكون حرفين على الأقل";
-        else if (data.name.length > 50)
-            newErrors.name = "الاسم لا يتجاوز 50 حرفًا";
 
-        if (!data.email) newErrors.email = "البريد الإلكتروني مطلوب";
-        else if (!/^\S+@\S+\.\S+$/.test(data.email))
-            newErrors.email = "يرجى إدخال بريد إلكتروني صحيح";
-        else if (data.email.length > 100)
-            newErrors.email = "البريد لا يتجاوز 100 حرف";
+        if (!data.name || data.name.trim().length < 2) {
+            newErrors.name = isArabic
+                ? "الاسم يجب أن يكون حرفين على الأقل"
+                : "Name must be at least 2 characters";
+        }
 
-        if (!data.subject) newErrors.subject = "الموضوع مطلوب";
-        else if (data.subject.length < 3)
-            newErrors.subject = "الموضوع يجب أن يكون 3 أحرف على الأقل";
-        else if (data.subject.length > 100)
-            newErrors.subject = "الموضوع لا يتجاوز 100 حرف";
+        if (!data.email || !/^\S+@\S+\.\S+$/.test(data.email)) {
+            newErrors.email = isArabic
+                ? "يرجى إدخال بريد إلكتروني صحيح"
+                : "Please enter a valid email address";
+        }
 
-        if (!data.message) newErrors.message = "الرسالة مطلوبة";
-        else if (data.message.length < 10)
-            newErrors.message = "الرسالة يجب أن تكون 10 أحرف على الأقل";
-        else if (data.message.length > 500)
-            newErrors.message = "الرسالة لا تتجاوز 500 حرف";
+        if (!data.subject || data.subject.trim().length < 3) {
+            newErrors.subject = isArabic
+                ? "الموضوع يجب أن يكون 3 أحرف على الأقل"
+                : "Subject must be at least 3 characters";
+        }
+
+        if (!data.message || data.message.trim().length < 10) {
+            newErrors.message = isArabic
+                ? "الرسالة يجب أن تكون 10 أحرف على الأقل"
+                : "Message must be at least 10 characters";
+        }
 
         return newErrors;
     };
@@ -69,15 +143,17 @@ const Contact = ({ auth }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         clearErrors();
+
         const validationErrors = validate();
 
         if (Object.keys(validationErrors).length > 0) {
-            Object.entries(validationErrors).forEach(([key, message]) =>
-                setError(key, message),
-            );
+            Object.entries(validationErrors).forEach(([key, value]) => {
+                setError(key, value);
+            });
+
             setNotification({
                 type: "error",
-                message: "يرجى تصحيح الأخطاء أدناه.",
+                message: t.validation,
             });
             return;
         }
@@ -86,471 +162,204 @@ const Contact = ({ auth }) => {
             const response = await axios.post("/contacts", data);
             setNotification({
                 type: "success",
-                message: response.data.message || "تم إرسال رسالتك بنجاح!",
+                message: response.data?.message || t.success,
             });
             reset();
         } catch (error) {
             setNotification({
                 type: "error",
-                message:
-                    error.response?.data?.message ||
-                    "حدث خطأ أثناء إرسال رسالتك.",
+                message: error.response?.data?.message || t.failed,
             });
         }
     };
 
-    const contactMethods = [
-        {
-            icon: Mail,
-            title: "راسلنا عبر البريد",
-            description: "فريقنا سيرد عليك خلال 24 ساعة",
-            contact: "support@mindbridge.com",
-            action: "mailto:support@mindbridge.com",
-        },
-        {
-            icon: Phone,
-            title: "اتصل بنا",
-            description: "متاح من الأحد إلى الخميس، 8ص - 6م",
-            contact: "+962-777777777",
-            action: "tel:+962777777777",
-        },
-    ];
-
     const faqs = [
-        {
-            question: "كم يستغرق الرد على استفسارتي؟",
-            answer: "نرد على جميع الاستفسارات خلال 24 ساعة في أيام العمل.",
-        },
-        {
-            question: "هل بياناتي الشخصية آمنة؟",
-            answer: "نعم، جميع بياناتك مشفّرة ومحمية ولا يمكن لأي طرف ثالث الوصول إليها.",
-        },
-        {
-            question: "كيف يمكنني إلغاء أو تغيير موعد جلستي؟",
-            answer: "يمكنك إدارة مواعيدك بسهولة من لوحة التحكم الخاصة بك في أي وقت.",
-        },
-        {
-            question: "هل يمكنني تغيير المعالج النفسي المُوصى به؟",
-            answer: "بالطبع، لديك كامل الحرية في اختيار معالج آخر من قائمة المعالجين المتاحين.",
-        },
-        {
-            question: "هل المنصة مناسبة للشركات؟",
-            answer: "نعم، نقدم حلولًا مؤسسية مخصصة لرصد صحة الموظفين النفسية.",
-        },
+        { q: t.q1, a: t.a1 },
+        { q: t.q2, a: t.a2 },
+        { q: t.q3, a: t.a3 },
     ];
 
     return (
-        <div dir="rtl" className="min-h-screen w-full relative overflow-hidden">
-            <Head title="تواصل معنا - MindBridge" />
+        <div
+            dir={isArabic ? "rtl" : "ltr"}
+            className={`min-h-screen ${pageBg} relative overflow-hidden`}
+        >
+            <Head title={t.title} />
+            <NavV2 />
 
-            {/* Background */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: `url('${backgroundImage}')` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#163040]/70 via-[#173444]/65 to-[#122734]/80 z-0" />
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -top-16 end-0 h-[340px] w-[340px] rounded-full bg-[#7aa7bb]/20 blur-3xl" />
+                <div className="absolute bottom-0 start-0 h-[300px] w-[300px] rounded-full bg-[#9cc7d8]/20 blur-3xl" />
+            </div>
 
-            {/* Decorative Glow */}
-            <div className="absolute top-0 right-0 w-[420px] h-[420px] bg-[#9cc7d8]/20 rounded-full blur-3xl z-0" />
-            <div className="absolute bottom-0 left-0 w-[380px] h-[380px] bg-[#bcdccf]/20 rounded-full blur-3xl z-0" />
-
-            {/* ===== Notification ===== */}
             <AnimatePresence>
                 {notification && (
                     <motion.div
-                        initial={{ opacity: 0, y: -50, scale: 0.9 }}
+                        initial={{ opacity: 0, y: -30, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -50, scale: 0.9 }}
-                        className="fixed top-6 left-6 z-50 max-w-md"
+                        exit={{ opacity: 0, y: -30, scale: 0.95 }}
+                        className="fixed top-24 z-[80] w-full px-4"
                     >
-                        <div
-                            className={`rounded-2xl shadow-2xl border backdrop-blur-md p-4 flex items-start gap-3 ${
-                                notification.type === "success"
-                                    ? "bg-[#163040]/90 border-[#7aa7bb]/50"
-                                    : "bg-red-900/80 border-red-500/50"
-                            }`}
-                        >
-                            {notification.type === "success" ? (
-                                <CheckCircle2 className="w-6 h-6 text-[#c6e4d5] flex-shrink-0 mt-0.5" />
-                            ) : (
-                                <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
-                            )}
-                            <div>
-                                <p className="font-bold text-white mb-1">
-                                    {notification.type === "success"
-                                        ? "تم بنجاح!"
-                                        : "خطأ"}
-                                </p>
-                                <p className="text-sm text-[#e0ebf0]">
+                        <div className="mx-auto max-w-md">
+                            <div
+                                className={`flex items-start gap-3 rounded-2xl border px-4 py-4 shadow-2xl backdrop-blur-xl ${
+                                    notification.type === "success"
+                                        ? isDark
+                                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                        : isDark
+                                          ? "border-red-500/20 bg-red-500/10 text-red-300"
+                                          : "border-red-200 bg-red-50 text-red-700"
+                                }`}
+                            >
+                                {notification.type === "success" ? (
+                                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                                ) : (
+                                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                                )}
+                                <div className="text-sm font-semibold">
                                     {notification.message}
-                                </p>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className="relative z-10">
-                {/* ===== Navbar ===== */}
-                <nav className="flex justify-between items-center p-6 md:px-12 lg:px-16">
-                    <div className="flex items-center">
-                        <img
-                            src="/images/logo.png"
-                            alt="MindBridge Logo"
-                            className="h-14 md:h-16 object-contain drop-shadow-lg"
-                        />
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {canGoBack && (
-                            <button
-                                onClick={() => window.history.back()}
-                                className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-xl transition-all duration-300 font-semibold"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                <span>رجوع</span>
-                            </button>
-                        )}
-                        <button
-                            onClick={() => (window.location.href = "/login")}
-                            className="group bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white px-6 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-[#7aa7bb]/30 font-semibold"
-                        >
-                            <span>تسجيل الدخول</span>
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                        </button>
-                    </div>
-                </nav>
-
-                {/* ===== Hero ===== */}
-                <section className="relative pt-12 pb-16 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto text-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.8 }}
-                            className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 border border-white/20 rounded-full backdrop-blur-md"
-                        >
-                            <Headphones className="w-5 h-5 text-[#b9dfcf]" />
-                            <span className="text-[#d8efe6] font-semibold text-sm tracking-wide">
-                                نحن هنا للمساعدة دائمًا
-                            </span>
-                        </motion.div>
-
-                        <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className="text-5xl md:text-7xl font-black text-white leading-tight drop-shadow-2xl mb-6"
-                        >
-                            تحدّث معنا،
-                            <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] via-[#9ed0d8] to-[#7faabd]">
-                                نحن نسمعك
-                            </span>
-                        </motion.h1>
-
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.4 }}
-                            className="text-xl text-[#e8f1f5] max-w-2xl mx-auto leading-9"
-                        >
-                            لديك سؤال أو استفسار؟ فريقنا جاهز للرد عليك. أرسل
-                            رسالتك وسنتواصل معك في أقرب وقت ممكن.
-                        </motion.p>
-                    </div>
-                </section>
-
-                {/* ===== Contact Method Cards ===== */}
-                <section className="pb-12 px-6 md:px-12 lg:px-16">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-                            {contactMethods.map((method, index) => (
-                                <motion.a
-                                    key={index}
-                                    href={method.action}
+            <main className="relative z-10 pt-28">
+                <section className="px-6 md:px-12 lg:px-16 pb-14">
+                    <div className="mx-auto max-w-7xl">
+                        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+                            <div>
+                                <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.15 }}
-                                    whileHover={{ y: -6 }}
-                                    className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 shadow-xl transition-all duration-300 hover:bg-white/15 hover:border-[#7aa7bb]/40"
+                                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${glass}`}
                                 >
-                                    <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl opacity-60" />
-                                    <div className="relative flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center group-hover:bg-[#7aa7bb]/20 transition-all duration-300">
-                                            <method.icon className="w-7 h-7 text-[#c6e4d5]" />
+                                    <Sparkles className="h-4 w-4 text-[#7aa7bb]" />
+                                    {t.badge}
+                                </motion.div>
+
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 26 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.08 }}
+                                    className="mt-6 text-5xl font-black leading-tight md:text-7xl"
+                                >
+                                    {t.heading}
+                                </motion.h1>
+
+                                <motion.p
+                                    initial={{ opacity: 0, y: 26 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.14 }}
+                                    className={`mt-6 max-w-2xl text-lg leading-9 ${textMuted}`}
+                                >
+                                    {t.intro}
+                                </motion.p>
+
+                                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                                    <div
+                                        className={`rounded-[28px] border p-5 shadow-lg ${glass}`}
+                                    >
+                                        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white">
+                                            <Mail className="h-6 w-6" />
                                         </div>
-                                        <div>
-                                            <h3 className="text-white font-extrabold text-lg mb-1">
-                                                {method.title}
-                                            </h3>
-                                            <p className="text-[#d1e0e7] text-sm mb-2">
-                                                {method.description}
-                                            </p>
-                                            <p className="text-[#9ed0d8] font-semibold text-sm">
-                                                {method.contact}
-                                            </p>
+                                        <div className="text-lg font-extrabold">
+                                            {t.emailCard}
+                                        </div>
+                                        <div
+                                            className={`mt-2 text-sm leading-7 ${textMuted}`}
+                                        >
+                                            {t.emailDesc}
+                                        </div>
+                                        <div className="mt-3 text-sm font-bold text-[#7aa7bb]">
+                                            support@mindgate.com
                                         </div>
                                     </div>
-                                </motion.a>
-                            ))}
-                        </div>
-                    </div>
-                </section>
 
-                {/* ===== Main: Form + FAQ ===== */}
-                <section className="py-8 px-6 md:px-12 lg:px-16 pb-20">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid lg:grid-cols-5 gap-10">
-                            {/* Form - 3 cols */}
-                            <motion.div
-                                initial={{ opacity: 0, x: 50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                className="lg:col-span-3"
-                            >
-                                <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-8 md:p-10 shadow-2xl">
-                                    <div className="absolute top-0 right-0 w-48 h-48 bg-[#9cc7d8]/10 rounded-full blur-3xl" />
-
-                                    <div className="relative mb-8">
-                                        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-white/10 border border-white/20 rounded-full backdrop-blur-md">
-                                            <Sparkles className="w-4 h-4 text-[#b9dfcf]" />
-                                            <span className="text-[#d8efe6] text-sm font-semibold">
-                                                أرسل رسالتك
-                                            </span>
+                                    <div
+                                        className={`rounded-[28px] border p-5 shadow-lg ${glass}`}
+                                    >
+                                        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white">
+                                            <Phone className="h-6 w-6" />
                                         </div>
-                                        <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
-                                            كيف يمكننا{" "}
-                                            <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#c7e5d6] to-[#7faabd]">
-                                                مساعدتك؟
-                                            </span>
-                                        </h2>
-                                        <p className="text-[#d1e0e7] text-sm leading-7">
-                                            املأ النموذج أدناه وسنرد عليك في
-                                            أقرب وقت
+                                        <div className="text-lg font-extrabold">
+                                            {t.phoneCard}
+                                        </div>
+                                        <div
+                                            className={`mt-2 text-sm leading-7 ${textMuted}`}
+                                        >
+                                            {t.phoneDesc}
+                                        </div>
+                                        <div className="mt-3 text-sm font-bold text-[#7aa7bb]">
+                                            +962-777777777
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.12 }}
+                                className={`rounded-[34px] border p-7 shadow-2xl ${glass}`}
+                            >
+                                <div className="grid gap-4">
+                                    <div
+                                        className={`rounded-3xl border p-5 ${glass}`}
+                                    >
+                                        <div className="mb-3 flex items-center gap-3">
+                                            <Shield className="h-5 w-5 text-[#7aa7bb]" />
+                                            <div className="font-extrabold">
+                                                {t.secureTitle}
+                                            </div>
+                                        </div>
+                                        <p
+                                            className={`text-sm leading-7 ${textMuted}`}
+                                        >
+                                            {t.secureText}
                                         </p>
                                     </div>
 
-                                    <form
-                                        onSubmit={handleSubmit}
-                                        className="relative space-y-5"
+                                    <div
+                                        className={`rounded-3xl border p-5 ${glass}`}
                                     >
-                                        {/* Name & Email */}
-                                        <div className="grid md:grid-cols-2 gap-5">
-                                            <div>
-                                                <label className="block text-sm font-semibold text-[#d1e0e7] mb-2">
-                                                    الاسم الكامل *
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={data.name}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "name",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-4 py-3 bg-white/5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7aa7bb] text-white placeholder-white/25 transition-all ${
-                                                        errors.name
-                                                            ? "border-red-400/60"
-                                                            : "border-white/15 hover:border-[#7aa7bb]/50"
-                                                    }`}
-                                                    placeholder="محمد أحمد"
-                                                />
-                                                {errors.name && (
-                                                    <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                                                        <AlertCircle className="w-3.5 h-3.5" />
-                                                        {errors.name}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-semibold text-[#d1e0e7] mb-2">
-                                                    البريد الإلكتروني *
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={data.email}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "email",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-4 py-3 bg-white/5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7aa7bb] text-white placeholder-white/25 transition-all ${
-                                                        errors.email
-                                                            ? "border-red-400/60"
-                                                            : "border-white/15 hover:border-[#7aa7bb]/50"
-                                                    }`}
-                                                    placeholder="example@email.com"
-                                                />
-                                                {errors.email && (
-                                                    <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                                                        <AlertCircle className="w-3.5 h-3.5" />
-                                                        {errors.email}
-                                                    </p>
-                                                )}
+                                        <div className="mb-3 flex items-center gap-3">
+                                            <Clock3 className="h-5 w-5 text-[#7aa7bb]" />
+                                            <div className="font-extrabold">
+                                                {isArabic
+                                                    ? "زمن استجابة واضح"
+                                                    : "Clear response time"}
                                             </div>
                                         </div>
-
-                                        {/* Subject */}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-[#d1e0e7] mb-2">
-                                                موضوع الرسالة *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={data.subject}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "subject",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7aa7bb] text-white placeholder-white/25 transition-all ${
-                                                    errors.subject
-                                                        ? "border-red-400/60"
-                                                        : "border-white/15 hover:border-[#7aa7bb]/50"
-                                                }`}
-                                                placeholder="كيف يمكننا مساعدتك؟"
-                                            />
-                                            {errors.subject && (
-                                                <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                                                    <AlertCircle className="w-3.5 h-3.5" />
-                                                    {errors.subject}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Message */}
-                                        <div>
-                                            <label className="block text-sm font-semibold text-[#d1e0e7] mb-2">
-                                                رسالتك *
-                                            </label>
-                                            <textarea
-                                                value={data.message}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "message",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                rows="5"
-                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7aa7bb] text-white placeholder-white/25 transition-all resize-none ${
-                                                    errors.message
-                                                        ? "border-red-400/60"
-                                                        : "border-white/15 hover:border-[#7aa7bb]/50"
-                                                }`}
-                                                placeholder="اكتب رسالتك هنا..."
-                                            />
-                                            <div className="flex justify-between items-center mt-1.5">
-                                                {errors.message ? (
-                                                    <p className="text-red-400 text-xs flex items-center gap-1">
-                                                        <AlertCircle className="w-3.5 h-3.5" />
-                                                        {errors.message}
-                                                    </p>
-                                                ) : (
-                                                    <div />
-                                                )}
-                                                <span className="text-[#d1e0e7]/40 text-xs">
-                                                    {data.message.length}/500
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Submit */}
-                                        <motion.button
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            type="submit"
-                                            disabled={processing}
-                                            className="w-full bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] hover:from-[#6d9bb0] hover:to-[#5f8ea2] text-white px-8 py-4 rounded-2xl font-bold text-base shadow-2xl hover:shadow-[#7aa7bb]/30 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        <p
+                                            className={`text-sm leading-7 ${textMuted}`}
                                         >
-                                            {processing ? (
-                                                <>
-                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    جارٍ الإرسال...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    إرسال الرسالة
-                                                    <Send className="w-5 h-5" />
-                                                </>
-                                            )}
-                                        </motion.button>
-                                    </form>
-                                </div>
-                            </motion.div>
-
-                            {/* FAQ + Quick Response - 2 cols */}
-                            <motion.div
-                                initial={{ opacity: 0, x: -50 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                className="lg:col-span-2 space-y-5"
-                            >
-                                {/* Quick Response */}
-                                <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 shadow-xl">
-                                    <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl opacity-60" />
-                                    <div className="relative flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] flex items-center justify-center shadow-lg">
-                                            <Zap className="w-7 h-7 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-white font-extrabold text-lg mb-1">
-                                                رد سريع مضمون
-                                            </h3>
-                                            <p className="text-[#e0ebf0] text-sm leading-7">
-                                                نفخر بسرعة ردودنا. توقّع أن تسمع
-                                                منّا خلال 24 ساعة في أيام العمل.
-                                            </p>
-                                        </div>
+                                            {isArabic
+                                                ? "نهتم بأن تكون قنوات التواصل بسيطة وواضحة ومباشرة."
+                                                : "We care about keeping communication simple, direct, and predictable."}
+                                        </p>
                                     </div>
-                                </div>
 
-                                {/* Support Card */}
-                                <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 shadow-xl">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#bcdccf]/10 rounded-full blur-2xl" />
-                                    <div className="relative flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center">
-                                            <HeartHandshake className="w-7 h-7 text-[#c6e4d5]" />
+                                    <div
+                                        className={`rounded-3xl border p-5 ${glass}`}
+                                    >
+                                        <div className="mb-3 flex items-center gap-3">
+                                            <Headphones className="h-5 w-5 text-[#7aa7bb]" />
+                                            <div className="font-extrabold">
+                                                {isArabic
+                                                    ? "دعم متعاون"
+                                                    : "Helpful support"}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-white font-extrabold text-lg mb-1">
-                                                دعم إنساني حقيقي
-                                            </h3>
-                                            <p className="text-[#e0ebf0] text-sm leading-7">
-                                                فريقنا من المختصين والمستشارين
-                                                جاهز لمساعدتك بكل ترحيب
-                                                واحترافية.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* FAQ */}
-                                <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 shadow-xl">
-                                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#9cc7d8]/10 rounded-full blur-2xl" />
-                                    <div className="relative">
-                                        <h3 className="text-white font-extrabold text-xl mb-5 flex items-center gap-2">
-                                            <MessageCircle className="w-5 h-5 text-[#c6e4d5]" />
-                                            أسئلة شائعة
-                                        </h3>
-                                        <div className="space-y-4">
-                                            {faqs.map((faq, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="border-b border-white/10 last:border-0 pb-4 last:pb-0"
-                                                >
-                                                    <h4 className="font-bold text-white mb-1.5 text-sm">
-                                                        {faq.question}
-                                                    </h4>
-                                                    <p className="text-[#d1e0e7] text-sm leading-7">
-                                                        {faq.answer}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <p
+                                            className={`text-sm leading-7 ${textMuted}`}
+                                        >
+                                            {isArabic
+                                                ? "سواء كنت فردًا أو جهة مؤسسية، يمكننا مساعدتك على فهم الخطوة التالية."
+                                                : "Whether you are an individual or an organization, we can help you understand the next step."}
+                                        </p>
                                     </div>
                                 </div>
                             </motion.div>
@@ -558,33 +367,187 @@ const Contact = ({ auth }) => {
                     </div>
                 </section>
 
-                {/* ===== Footer ===== */}
-                <footer className="border-t border-white/10 px-6 md:px-12 lg:px-16 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[#d1e0e7]/50 text-sm">
-                    <div className="flex items-center gap-5">
-                        <a
-                            href="/privacy"
-                            className="hover:text-[#d1e0e7] transition-colors"
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.12fr_0.88fr]">
+                        <div
+                            className={`rounded-[34px] border p-8 shadow-2xl ${glass}`}
                         >
-                            الخصوصية
-                        </a>
-                        <a
-                            href="/terms"
-                            className="hover:text-[#d1e0e7] transition-colors"
-                        >
-                            الشروط
-                        </a>
-                        <a
-                            href="/about-us"
-                            className="hover:text-[#d1e0e7] transition-colors"
-                        >
-                            من نحن
-                        </a>
+                            <div className="mb-8">
+                                <div className="text-3xl font-black">
+                                    {t.formTitle}
+                                </div>
+                                <p
+                                    className={`mt-3 text-base leading-8 ${textMuted}`}
+                                >
+                                    {t.formText}
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div className="grid gap-5 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-bold">
+                                            {t.name}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.name}
+                                            onChange={(e) =>
+                                                setData("name", e.target.value)
+                                            }
+                                            className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                                                isDark
+                                                    ? "border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                                                    : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                                            }`}
+                                        />
+                                        {errors.name && (
+                                            <p className="mt-2 text-xs text-red-500">
+                                                {errors.name}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-bold">
+                                            {t.email}
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={data.email}
+                                            onChange={(e) =>
+                                                setData("email", e.target.value)
+                                            }
+                                            className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                                                isDark
+                                                    ? "border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                                                    : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                                            }`}
+                                        />
+                                        {errors.email && (
+                                            <p className="mt-2 text-xs text-red-500">
+                                                {errors.email}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">
+                                        {t.subject}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.subject}
+                                        onChange={(e) =>
+                                            setData("subject", e.target.value)
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                                                : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                                        }`}
+                                    />
+                                    {errors.subject && (
+                                        <p className="mt-2 text-xs text-red-500">
+                                            {errors.subject}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">
+                                        {t.message}
+                                    </label>
+                                    <textarea
+                                        rows="6"
+                                        value={data.message}
+                                        onChange={(e) =>
+                                            setData("message", e.target.value)
+                                        }
+                                        className={`w-full resize-none rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                                                : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                                        }`}
+                                    />
+                                    {errors.message && (
+                                        <p className="mt-2 text-xs text-red-500">
+                                            {errors.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-base font-bold text-white shadow-xl transition hover:scale-[1.01] disabled:opacity-60"
+                                >
+                                    {processing ? t.sending : t.submit}
+                                    <Send className="h-5 w-5" />
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div
+                                className={`rounded-[34px] border p-8 shadow-xl ${glass}`}
+                            >
+                                <div className="mb-5 text-2xl font-black">
+                                    {t.faqTitle}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {faqs.map((item, index) => (
+                                        <div
+                                            key={index}
+                                            className={`rounded-2xl border p-5 ${glass}`}
+                                        >
+                                            <div className="font-bold">
+                                                {item.q}
+                                            </div>
+                                            <p
+                                                className={`mt-2 text-sm leading-7 ${textMuted}`}
+                                            >
+                                                {item.a}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div
+                                className={`rounded-[34px] border p-8 shadow-xl ${glass}`}
+                            >
+                                <div className="mb-4 flex items-center gap-3">
+                                    <MessageCircle className="h-5 w-5 text-[#7aa7bb]" />
+                                    <div className="text-xl font-extrabold">
+                                        {isArabic
+                                            ? "قناة تواصل واضحة"
+                                            : "A clearer communication channel"}
+                                    </div>
+                                </div>
+
+                                <p className={`text-sm leading-8 ${textMuted}`}>
+                                    {isArabic
+                                        ? "هدفنا أن تشعر أن التواصل مع المنصة بسيط، واضح، وسريع دون تعقيد."
+                                        : "Our goal is to make contacting the platform simple, clear, and fast without unnecessary friction."}
+                                </p>
+
+                                <div className="mt-6">
+                                    <a
+                                        href="mailto:support@mindgate.com"
+                                        className="inline-flex items-center gap-2 font-bold text-[#7aa7bb]"
+                                    >
+                                        support@mindgate.com
+                                        <ArrowRight className="h-4 w-4" />
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p>© 2025 MindBridge. جميع الحقوق محفوظة.</p>
-                </footer>
-            </div>
+                </section>
+            </main>
         </div>
     );
-};
-
-export default Contact;
+}

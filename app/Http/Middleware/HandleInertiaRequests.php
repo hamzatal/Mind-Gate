@@ -3,8 +3,9 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
-use Inertia\Middleware;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -17,32 +18,55 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
+        $adminAvatarColumn = null;
+
+        if (Schema::hasTable('admins')) {
+            if (Schema::hasColumn('admins', 'avatar')) {
+                $adminAvatarColumn = 'avatar';
+            } elseif (Schema::hasColumn('admins', 'image')) {
+                $adminAvatarColumn = 'image';
+            }
+        }
+
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => Auth::guard('web')->check() ? [
-                    'id' => Auth::guard('web')->user()->id,
-                    'name' => Auth::guard('web')->user()->name,
-                    'email' => Auth::guard('web')->user()->email,
-                ] : null,
-                'admin' => Auth::guard('admin')->check() ? [
-                    'id' => Auth::guard('admin')->user()->id,
-                    'name' => Auth::guard('admin')->user()->name,
-                    'email' => Auth::guard('admin')->user()->email,
-                ] : null,
-                'company' => Auth::guard('company')->check() ? [
-                    'id' => Auth::guard('company')->user()->id,
-                    'name' => Auth::guard('company')->user()->name,
-                    'email' => Auth::guard('company')->user()->email,
-                    'company_name' => Auth::guard('company')->user()->company_name,
-                ] : null,
+                'user' => function () {
+                    if (!Auth::guard('web')->check()) {
+                        return null;
+                    }
+
+                    $user = Auth::guard('web')->user();
+
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->full_name ?? $user->name ?? 'User',
+                        'email' => $user->email ?? null,
+                        'profile_completed' => (bool) ($user->profile_completed ?? false),
+                        'role' => 'user',
+                    ];
+                },
+                'admin' => function () use ($adminAvatarColumn) {
+                    if (!Auth::guard('admin')->check()) {
+                        return null;
+                    }
+
+                    $admin = Auth::guard('admin')->user();
+
+                    return [
+                        'id' => $admin->id,
+                        'name' => $admin->name ?? 'Admin',
+                        'email' => $admin->email ?? null,
+                        'avatar' => $adminAvatarColumn && !empty($admin->{$adminAvatarColumn})
+                            ? asset('storage/' . $admin->{$adminAvatarColumn})
+                            : null,
+                        'role' => 'admin',
+                    ];
+                },
             ],
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
             ],
-            'errors' => $request->session()->get('errors')
-                ? $request->session()->get('errors')->getBag('default')->getMessages()
-                : [],
         ]);
     }
 }

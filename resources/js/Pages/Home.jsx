@@ -1,1110 +1,1252 @@
-import React, {
-    useState,
-    useEffect,
-    useRef,
-    useMemo,
-    useCallback,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { Head, Link, usePage } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Brain,
-    ArrowRight,
-    ArrowLeft,
-    MessageCircle,
-    X,
-    ShieldCheck,
     Sparkles,
-    Sun,
-    Moon,
-    Search,
+    ShieldCheck,
+    Activity,
+    NotebookPen,
     HeartHandshake,
     BookOpenText,
-    Activity,
-    CheckCircle2,
-    NotebookPen,
-    Clock3,
     Users,
+    Stethoscope,
+    LineChart,
+    Building2,
+    MessageCircle,
+    ArrowRight,
+    CheckCircle2,
+    Clock3,
     Star,
-    CircleHelp,
+    X,
 } from "lucide-react";
-import { Head, usePage, Link } from "@inertiajs/react";
-import toast, { Toaster } from "react-hot-toast";
-import Navbar from "../Components/Nav";
-import Footer from "../Components/Footer";
-import ChatBot from "../Components/ChatBot";
+import NavBar from "@/Components/NavBar";
+import Footer from "@/Components/Footer";
+import useSitePreferences from "@/hooks/useSitePreferences";
 
-const FeatureCard = ({ item, isDarkMode }) => {
-    const Icon = item.icon;
+axios.defaults.baseURL = window.location.origin;
 
+function GlassCard({ children, isDark, className = "" }) {
     return (
-        <motion.div
-            whileHover={{ y: -6 }}
-            transition={{ duration: 0.25 }}
-            className={`rounded-3xl p-6 h-full border transition-all duration-300 ${
-                isDarkMode
-                    ? "bg-gray-800/90 border-gray-700 hover:border-gray-600"
-                    : "bg-white border-gray-200 hover:border-blue-200"
-            } shadow-sm hover:shadow-xl`}
+        <div
+            className={`rounded-[32px] border shadow-xl ${
+                isDark
+                    ? "border-white/10 bg-white/5"
+                    : "border-slate-200 bg-white/85"
+            } ${className}`}
         >
-            <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4">
-                <Icon size={26} className="text-blue-600" />
-            </div>
-
-            <h3
-                className={`text-xl font-bold mb-3 ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                }`}
-            >
-                {item.title}
-            </h3>
-
-            <p
-                className={`text-sm leading-7 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
-                }`}
-            >
-                {item.description}
-            </p>
-        </motion.div>
+            {children}
+        </div>
     );
-};
+}
 
-const ToolCard = ({ item, isDarkMode, onPrimaryAction }) => {
-    const Icon = item.icon;
-
+function SectionTitle({ title, subtitle, isDark }) {
     return (
-        <motion.div
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.25 }}
-            className={`rounded-3xl p-6 border h-full flex flex-col ${
-                isDarkMode
-                    ? "bg-gray-800/90 border-gray-700"
-                    : "bg-white border-gray-200"
-            } shadow-sm hover:shadow-xl`}
-        >
-            <div className="flex items-start justify-between gap-4 mb-5">
-                <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center">
-                    <Icon size={24} className="text-blue-600" />
-                </div>
-                <span
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-                        isDarkMode
-                            ? "bg-gray-700 text-gray-300"
-                            : "bg-blue-50 text-blue-700"
-                    }`}
-                >
-                    {item.badge}
-                </span>
-            </div>
-
-            <h3
-                className={`text-xl font-bold mb-3 ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                }`}
+        <div className="mb-12 text-center">
+            <h2
+                className={`text-3xl md:text-5xl font-black ${isDark ? "text-white" : "text-slate-900"}`}
             >
-                {item.title}
-            </h3>
-
+                {title}
+            </h2>
             <p
-                className={`text-sm leading-7 flex-grow ${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
-                }`}
+                className={`mt-4 max-w-3xl mx-auto text-lg leading-8 ${isDark ? "text-white/70" : "text-slate-600"}`}
             >
-                {item.description}
+                {subtitle}
             </p>
-
-            <button
-                type="button"
-                onClick={onPrimaryAction}
-                className="mt-6 inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
-            >
-                {item.cta}
-                <ArrowRight size={16} />
-            </button>
-        </motion.div>
+        </div>
     );
-};
+}
 
-const HomePage = ({ auth }) => {
+export default function Home() {
     const { props } = usePage();
     const {
+        auth = {},
         heroSections = [],
+        featuredSpecialists = [],
+        featuredResources = [],
+        stats = {},
+        latestCheckin = null,
+        hasTodayCheckin = false,
         flash = {},
-        translations = {},
     } = props;
 
-    const sharedAuth = props.auth || auth || {};
-    const user = sharedAuth?.user || null;
+    const user = auth?.user || null;
+    const admin = auth?.admin || null;
 
-    const toolsRef = useRef(null);
-    const searchRef = useRef(null);
+    const { isDark, isArabic } = useSitePreferences();
 
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        if (typeof window === "undefined") return false;
-        const savedMode = localStorage.getItem("darkMode");
-        if (savedMode !== null) return savedMode === "true";
-        return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const [slide, setSlide] = useState(0);
+    const [assessmentOpen, setAssessmentOpen] = useState(false);
+    const [checkinOpen, setCheckinOpen] = useState(false);
+    const [assessmentLoading, setAssessmentLoading] = useState(false);
+    const [checkinLoading, setCheckinLoading] = useState(false);
+    const [assessmentResult, setAssessmentResult] = useState(null);
+    const [banner, setBanner] = useState({
+        success: flash?.success || null,
+        error: flash?.error || null,
     });
 
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [isTooltipVisible, setIsTooltipVisible] = useState(true);
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [assessmentForm, setAssessmentForm] = useState({
+        full_name: user?.name || "",
+        email: user?.email || "",
+        anxiety: 3,
+        stress: 3,
+        sleep_quality: 3,
+        mood_balance: 3,
+        focus: 3,
+        energy: 3,
+    });
 
-    useEffect(() => {
-        localStorage.setItem("darkMode", isDarkMode ? "true" : "false");
-        document.documentElement.classList.toggle("dark", isDarkMode);
-    }, [isDarkMode]);
+    const [checkinForm, setCheckinForm] = useState({
+        mood: 5,
+        stress: 5,
+        energy: 5,
+        focus: 5,
+        sleep_hours: "",
+        notes: "",
+    });
 
-    useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
+    const t = useMemo(
+        () => ({
+            title: "Mind Gate",
+            heroBadge: isArabic
+                ? "منصة رقمية متكاملة للصحة النفسية"
+                : "Integrated digital mental-health platform",
+            heroTitle1: isArabic ? "بوابتك" : "Your gateway",
+            heroTitle2: isArabic ? "لفهم حالتك النفسية" : "to understanding",
+            heroTitle3: isArabic
+                ? "والمتابعة اليومية بوضوح"
+                : "your mental state",
+            heroText: isArabic
+                ? "ابدأ بتقييم أولي، تابع يومك بمؤشرات واضحة، واكتشف الموارد والمختصين المناسبين ضمن تجربة حديثة وآمنة."
+                : "Start with an initial assessment, follow your daily state with clear indicators, and explore the right resources and specialists in a safe modern experience.",
+            ctaMain:
+                user || admin
+                    ? isArabic
+                        ? "الدخول إلى المساحة الخاصة"
+                        : "Go to your space"
+                    : isArabic
+                      ? "إنشاء حساب"
+                      : "Create account",
+            ctaSecondary: isArabic
+                ? "ابدأ التقييم الأولي"
+                : "Start quick assessment",
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsTooltipVisible(false), 4000);
-        return () => clearTimeout(timer);
-    }, []);
+            users: isArabic ? "المستخدمون" : "Users",
+            specialists: isArabic ? "المختصون" : "Specialists",
+            resources: isArabic ? "الموارد" : "Resources",
+            checkins: isArabic ? "متابعات اليوم" : "Today check-ins",
+
+            featuresTitle: isArabic
+                ? "ماذا يقدّم الموقع فعليًا؟"
+                : "What does the platform actually provide?",
+            featuresSubtitle: isArabic
+                ? "مسار واضح يبدأ بالفهم، ثم التقييم، ثم المتابعة، ثم الدعم المناسب."
+                : "A clear journey that starts with understanding, then assessment, then tracking, then appropriate support.",
+
+            specialistsTitle: isArabic
+                ? "مختصون موثوقون"
+                : "Trusted specialists",
+            specialistsSubtitle: isArabic
+                ? "هذا القسم يقرأ بيانات حقيقية من قاعدة البيانات."
+                : "This section reads live specialist data from the database.",
+
+            resourcesTitle: isArabic ? "مركز الموارد" : "Resource center",
+            resourcesSubtitle: isArabic
+                ? "محتوى معرفي وتمارين ومقالات تساعد المستخدم في المتابعة اليومية."
+                : "Articles, exercises, and guided content that support daily progress.",
+
+            dailyCheckinTitle: isArabic ? "المتابعة اليومية" : "Daily check-in",
+            dailyCheckinText: isArabic
+                ? "سجّل مزاجك وتوترك وطاقة يومك ونومك حتى ترى الصورة بشكل أوضح مع الوقت."
+                : "Track mood, stress, energy, focus, and sleep to build a clearer picture over time.",
+            todaySaved: isArabic
+                ? "تم حفظ متابعة اليوم"
+                : "Today check-in saved",
+            submitCheckin: isArabic
+                ? "سجل متابعة اليوم"
+                : "Submit today check-in",
+
+            quickAssessmentTitle: isArabic
+                ? "التقييم الأولي"
+                : "Quick assessment",
+            quickAssessmentText: isArabic
+                ? "ابدأ بنموذج قصير يعطيك ملخصًا أوليًا وتوصية مبدئية."
+                : "Start with a short form that returns an early summary and a first recommendation.",
+            resultTitle: isArabic ? "نتيجة التقييم" : "Assessment result",
+
+            orgTitle: isArabic
+                ? "مصمم للأفراد والمؤسسات"
+                : "Built for individuals and organizations",
+            orgText: isArabic
+                ? "المنصة قابلة للتوسع لتخدم الشركات والمؤسسات في دعم الصحة النفسية للموظفين ضمن تدفقات عمل واضحة."
+                : "The platform is ready to expand toward organization workflows and employee mental-health support.",
+
+            noSpecialists: isArabic
+                ? "لا يوجد مختصون مضافون بعد."
+                : "No specialists have been added yet.",
+            noResources: isArabic
+                ? "لا توجد موارد منشورة بعد."
+                : "No published resources yet.",
+
+            viewAllSpecialists: isArabic
+                ? "عرض كل المختصين"
+                : "View all specialists",
+            viewAllResources: isArabic
+                ? "عرض كل الموارد"
+                : "View all resources",
+
+            close: isArabic ? "إغلاق" : "Close",
+            send: isArabic ? "إرسال" : "Submit",
+            saving: isArabic ? "جارٍ الحفظ..." : "Saving...",
+        }),
+        [isArabic, user, admin],
+    );
+
+    const hero = heroSections[slide] || null;
+    const pageBg = isDark
+        ? "bg-[#081018] text-white"
+        : "bg-[#f7fafc] text-slate-900";
+    const muted = isDark ? "text-white/70" : "text-slate-600";
 
     useEffect(() => {
         if (heroSections.length > 1) {
             const timer = setInterval(() => {
-                setCurrentSlide((prev) => (prev + 1) % heroSections.length);
+                setSlide((prev) => (prev + 1) % heroSections.length);
             }, 5000);
 
             return () => clearInterval(timer);
         }
     }, [heroSections]);
 
-    const toggleChat = useCallback(() => {
-        setIsChatOpen((prev) => !prev);
-    }, []);
+    useEffect(() => {
+        if (!banner.success && !banner.error) return;
+        const timer = setTimeout(() => {
+            setBanner({ success: null, error: null });
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [banner]);
 
-    const toggleDarkMode = useCallback(() => {
-        setIsDarkMode((prev) => !prev);
-    }, []);
+    const submitAssessment = async (e) => {
+        e.preventDefault();
+        setAssessmentLoading(true);
 
-    const scrollToTools = useCallback(() => {
-        toolsRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
+        try {
+            const res = await axios.post(
+                route("assessment.quick"),
+                assessmentForm,
+            );
+            setAssessmentResult(res.data?.result || null);
+            setBanner({
+                success:
+                    res.data?.message || "Assessment submitted successfully.",
+                error: null,
+            });
+        } catch (error) {
+            setBanner({
+                success: null,
+                error:
+                    error.response?.data?.message ||
+                    "Failed to submit assessment.",
+            });
+        } finally {
+            setAssessmentLoading(false);
+        }
+    };
 
-    const scrollToSearch = useCallback(() => {
-        searchRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, []);
+    const submitCheckin = async (e) => {
+        e.preventDefault();
+        setCheckinLoading(true);
 
-    const supportTopics = useMemo(
-        () => [
-            {
-                title: "Managing Anxiety",
-                category: "anxiety",
-                description:
-                    "Gentle support paths for worry, racing thoughts, and emotional overload.",
-                href: "#",
-            },
-            {
-                title: "Better Sleep Habits",
-                category: "sleep",
-                description:
-                    "Daily routines and calming practices to improve rest and nighttime balance.",
-                href: "#",
-            },
-            {
-                title: "Stress Reset",
-                category: "stress",
-                description:
-                    "Short, practical techniques to reduce tension and regain steadiness.",
-                href: "#",
-            },
-            {
-                title: "Focus and Clarity",
-                category: "focus",
-                description:
-                    "Simple exercises to organize thoughts and reduce mental distraction.",
-                href: "#",
-            },
-            {
-                title: "Mood Check-ins",
-                category: "mood",
-                description:
-                    "Structured emotional reflection to help you better understand your state.",
-                href: "#",
-            },
-            {
-                title: "Guided Journaling",
-                category: "journaling",
-                description:
-                    "Prompts that help you express feelings safely and meaningfully.",
-                href: "#",
-            },
-        ],
-        [],
-    );
-
-    const filteredTopics = useMemo(() => {
-        if (!searchQuery.trim()) return supportTopics;
-
-        const q = searchQuery.toLowerCase().trim();
-
-        return supportTopics.filter(
-            (item) =>
-                item.title.toLowerCase().includes(q) ||
-                item.category.toLowerCase().includes(q) ||
-                item.description.toLowerCase().includes(q),
-        );
-    }, [searchQuery, supportTopics]);
+        try {
+            const res = await axios.post(
+                route("daily-checkins.store"),
+                checkinForm,
+            );
+            setBanner({
+                success: res.data?.message || "Check-in saved successfully.",
+                error: null,
+            });
+            setCheckinOpen(false);
+        } catch (error) {
+            setBanner({
+                success: null,
+                error:
+                    error.response?.data?.message || "Failed to save check-in.",
+            });
+        } finally {
+            setCheckinLoading(false);
+        }
+    };
 
     const featureCards = [
         {
             icon: Brain,
-            title: "Personalized mental wellness journey",
-            description:
-                "Mind Gate helps each user begin from their current emotional state and move through a guided, supportive experience.",
+            title: isArabic ? "تقييم أولي ذكي" : "Smart initial assessment",
+            text: isArabic
+                ? "نقطة دخول واضحة تساعد المستخدم على فهم وضعه الحالي."
+                : "A clear entry point that helps users understand their current state.",
         },
-        {
-            icon: MessageCircle,
-            title: "AI companion with a calm tone",
-            description:
-                "A supportive AI assistant can help users explore feelings, reflect, and discover useful next steps in a safe way.",
-        },
-        {
-            icon: ShieldCheck,
-            title: "Private, respectful, and user-centered",
-            description:
-                "The platform is designed to feel safe, non-judgmental, and focused on trust from the very first interaction.",
-        },
-    ];
-
-    const platformTools = [
         {
             icon: Activity,
-            badge: "Daily",
-            title: "Mood tracking",
-            description:
-                "Check in with your emotional state regularly and build a clearer understanding of how you are feeling over time.",
-            cta: "Start a check-in",
-        },
-        {
-            icon: NotebookPen,
-            badge: "Reflect",
-            title: "Guided journaling",
-            description:
-                "Use simple writing prompts to process thoughts, reduce overwhelm, and create more emotional clarity.",
-            cta: "Open journaling prompts",
-        },
-        {
-            icon: HeartHandshake,
-            badge: "Support",
-            title: "Calming exercises",
-            description:
-                "Access breathing routines, grounding practices, and short supportive exercises for stressful moments.",
-            cta: "Explore exercises",
+            title: isArabic
+                ? "متابعة يومية منظمة"
+                : "Structured daily tracking",
+            text: isArabic
+                ? "المزاج، التوتر، الطاقة، النوم، والتركيز في مسار واحد منظم."
+                : "Mood, stress, energy, sleep, and focus in one structured workflow.",
         },
         {
             icon: BookOpenText,
-            badge: "Learn",
-            title: "Wellness resources",
-            description:
-                "Read practical mental wellness content designed in a clear, approachable, and supportive way.",
-            cta: "Browse resources",
-        },
-    ];
-
-    const steps = [
-        {
-            number: "01",
-            title: "Begin with your current state",
-            description:
-                "Users start by understanding and expressing how they feel right now.",
+            title: isArabic ? "موارد معرفية" : "Knowledge resources",
+            text: isArabic
+                ? "مقالات وتمارين وأدلة تساعد المستخدم في التقدم خطوة بخطوة."
+                : "Articles, exercises, and guides that help users move forward step by step.",
         },
         {
-            number: "02",
-            title: "Receive guided support",
-            description:
-                "Mind Gate recommends calm, useful next steps based on needs and goals.",
+            icon: HeartHandshake,
+            title: isArabic ? "دعم إنساني" : "Human-centered support",
+            text: isArabic
+                ? "واجهة هادئة وواضحة تحترم حساسية المجال النفسي."
+                : "A calmer and clearer interface that respects the sensitivity of mental-health support.",
         },
-        {
-            number: "03",
-            title: "Build healthier habits over time",
-            description:
-                "Small, repeated actions help users develop more stability and emotional balance.",
-        },
-    ];
-
-    const trustPoints = [
-        "Structured onboarding that feels calm and clear",
-        "Supportive tone instead of pressure or judgment",
-        "Useful daily tools that are easy to return to",
-        "Modern, responsive interface for all screen sizes",
     ];
 
     return (
         <div
-            className={`min-h-screen ${
-                isDarkMode
-                    ? "dark bg-gray-900 text-white"
-                    : "bg-gray-50 text-gray-900"
-            }`}
+            dir={isArabic ? "rtl" : "ltr"}
+            className={`min-h-screen ${pageBg} relative overflow-hidden`}
         >
-            <Head>
-                <title>Mind Gate - Mental Wellness Platform</title>
-                <meta
-                    name="description"
-                    content="Mind Gate is a modern mental wellness platform that offers guided support, emotional reflection tools, and a calm AI companion."
-                />
-            </Head>
+            <Head title={t.title} />
+            <NavBar />
 
-            <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -top-16 end-0 h-[380px] w-[380px] rounded-full bg-[#7aa7bb]/20 blur-3xl" />
+                <div className="absolute bottom-0 start-0 h-[300px] w-[300px] rounded-full bg-[#9cc7d8]/20 blur-3xl" />
+            </div>
 
-            <Navbar
-                user={user}
-                isDarkMode={isDarkMode}
-                toggleDarkMode={toggleDarkMode}
-            />
-
-            {/* Hero */}
-            <section className="relative min-h-screen w-full overflow-hidden">
-                {heroSections.length > 0 ? (
-                    <>
-                        <div className="absolute inset-0">
-                            <AnimatePresence initial={false} mode="wait">
-                                <motion.div
-                                    key={currentSlide}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.6 }}
-                                    className="absolute inset-0"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/40 to-black/70" />
-                                    <img
-                                        src={
-                                            heroSections[currentSlide]?.image ||
-                                            "/images/placeholder-hero.jpg"
-                                        }
-                                        alt={
-                                            heroSections[currentSlide]?.title ||
-                                            "Mind Gate Hero"
-                                        }
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                        onError={(e) => {
-                                            e.target.src =
-                                                "/images/placeholder-hero.jpg";
-                                        }}
-                                    />
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
-
-                        <div className="relative z-10 min-h-screen flex items-center">
-                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                                <div className="max-w-4xl">
-                                    <motion.h1
-                                        key={`title-${currentSlide}`}
-                                        initial={{ opacity: 0, y: 24 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5 }}
-                                        className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight"
-                                    >
-                                        {heroSections[currentSlide]?.title ||
-                                            translations.hero_section_title ||
-                                            "Mind Gate"}
-                                    </motion.h1>
-
-                                    <motion.p
-                                        key={`subtitle-${currentSlide}`}
-                                        initial={{ opacity: 0, y: 24 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{
-                                            duration: 0.5,
-                                            delay: 0.1,
-                                        }}
-                                        className="mt-6 text-lg sm:text-xl lg:text-2xl text-white/90 leading-8 max-w-3xl"
-                                    >
-                                        {heroSections[currentSlide]?.subtitle ||
-                                            translations.journey_planner_subtitle ||
-                                            "A calm digital space for guided support, emotional awareness, and healthier daily habits."}
-                                    </motion.p>
-
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 24 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{
-                                            duration: 0.5,
-                                            delay: 0.2,
-                                        }}
-                                        className="mt-10 flex flex-col sm:flex-row gap-4"
-                                    >
-                                        <Link
-                                            href={user ? "/home" : "/register"}
-                                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold text-base shadow-xl"
-                                        >
-                                            {user
-                                                ? "Go to your space"
-                                                : "Start your journey"}
-                                            <ArrowRight size={18} />
-                                        </Link>
-
-                                        <button
-                                            type="button"
-                                            onClick={scrollToTools}
-                                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 border border-white/30 backdrop-blur-sm text-white hover:bg-white/20 transition-colors font-bold text-base"
-                                        >
-                                            Explore platform tools
-                                        </button>
-                                    </motion.div>
-                                </div>
+            <AnimatePresence>
+                {(banner.success || banner.error) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -24 }}
+                        className="fixed top-24 z-[80] w-full px-4"
+                    >
+                        <div className="mx-auto max-w-xl">
+                            <div
+                                className={`rounded-2xl border px-4 py-4 text-sm font-semibold shadow-2xl backdrop-blur-xl ${
+                                    banner.error
+                                        ? isDark
+                                            ? "border-red-500/20 bg-red-500/10 text-red-300"
+                                            : "border-red-200 bg-red-50 text-red-700"
+                                        : isDark
+                                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                                          : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                }`}
+                            >
+                                {banner.error || banner.success}
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                        {heroSections.length > 1 && (
-                            <>
-                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 flex justify-between px-4 md:px-8">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setCurrentSlide((prev) =>
-                                                prev === 0
-                                                    ? heroSections.length - 1
-                                                    : prev - 1,
-                                            )
-                                        }
-                                        className="p-3 rounded-2xl bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-colors"
-                                        aria-label="Previous slide"
-                                    >
-                                        <ArrowLeft size={22} />
-                                    </button>
+            <main className="relative z-10 pt-28">
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+                        <div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${
+                                    isDark
+                                        ? "bg-white/5 border-white/10"
+                                        : "bg-white/80 border-slate-200"
+                                }`}
+                            >
+                                <Sparkles className="h-4 w-4 text-[#7aa7bb]" />
+                                {t.heroBadge}
+                            </motion.div>
 
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setCurrentSlide((prev) =>
-                                                prev === heroSections.length - 1
-                                                    ? 0
-                                                    : prev + 1,
-                                            )
-                                        }
-                                        className="p-3 rounded-2xl bg-white/15 backdrop-blur-sm text-white hover:bg-white/25 transition-colors"
-                                        aria-label="Next slide"
-                                    >
-                                        <ArrowRight size={22} />
-                                    </button>
-                                </div>
+                            <motion.h1
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.06 }}
+                                className="mt-6 text-5xl md:text-7xl font-black leading-tight"
+                            >
+                                {hero?.title ||
+                                    `${t.heroTitle1} ${t.heroTitle2}`}
+                                <br />
+                                <span className="bg-gradient-to-l from-[#c7e5d6] via-[#9ed0d8] to-[#7faabd] bg-clip-text text-transparent">
+                                    {hero?.subtitle || t.heroTitle3}
+                                </span>
+                            </motion.h1>
 
-                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                            <motion.p
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.12 }}
+                                className={`mt-6 max-w-2xl text-lg leading-9 ${muted}`}
+                            >
+                                {t.heroText}
+                            </motion.p>
+
+                            <div className="mt-8 flex flex-wrap gap-4">
+                                <Link
+                                    href={
+                                        admin
+                                            ? route("admin.dashboard")
+                                            : user
+                                              ? route("home")
+                                              : route("register")
+                                    }
+                                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-7 py-4 text-base font-bold text-white shadow-xl transition hover:scale-[1.02]"
+                                >
+                                    {t.ctaMain}
+                                    <ArrowRight className="h-5 w-5" />
+                                </Link>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setAssessmentOpen(true)}
+                                    className={`inline-flex items-center gap-2 rounded-2xl border px-7 py-4 text-base font-bold transition ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5 text-white"
+                                            : "border-slate-200 bg-white/85 text-slate-900"
+                                    }`}
+                                >
+                                    {t.ctaSecondary}
+                                </button>
+                            </div>
+
+                            {heroSections.length > 1 && (
+                                <div className="mt-8 flex items-center gap-2">
                                     {heroSections.map((_, index) => (
                                         <button
                                             key={index}
                                             type="button"
-                                            onClick={() =>
-                                                setCurrentSlide(index)
-                                            }
-                                            className={`h-2 rounded-full transition-all ${
-                                                currentSlide === index
-                                                    ? "w-8 bg-white"
-                                                    : "w-2 bg-white/50"
+                                            onClick={() => setSlide(index)}
+                                            className={`h-2.5 rounded-full transition-all ${
+                                                slide === index
+                                                    ? "w-10 bg-[#7aa7bb]"
+                                                    : isDark
+                                                      ? "w-2.5 bg-white/30"
+                                                      : "w-2.5 bg-slate-300"
                                             }`}
-                                            aria-label={`Slide ${index + 1}`}
                                         />
                                     ))}
                                 </div>
-                            </>
-                        )}
-                    </>
-                ) : (
-                    <div className="min-h-screen flex items-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950" />
-                        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_#60a5fa,_transparent_30%),radial-gradient(circle_at_bottom_left,_#38bdf8,_transparent_25%)]" />
-
-                        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                            <div className="max-w-4xl">
-                                <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight">
-                                    {translations.hero_section_title ||
-                                        "Mind Gate"}
-                                </h1>
-                                <p className="mt-6 text-lg sm:text-xl lg:text-2xl text-white/85 leading-8 max-w-3xl">
-                                    {translations.journey_planner_subtitle ||
-                                        "A supportive digital platform for emotional awareness, guided reflection, and healthier daily habits."}
-                                </p>
-
-                                <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                                    <Link
-                                        href={user ? "/home" : "/register"}
-                                        className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold text-base shadow-xl"
-                                    >
-                                        {user
-                                            ? "Go to your space"
-                                            : "Start your journey"}
-                                        <ArrowRight size={18} />
-                                    </Link>
-
-                                    <button
-                                        type="button"
-                                        onClick={scrollToSearch}
-                                        className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors font-bold text-base"
-                                    >
-                                        Explore support topics
-                                    </button>
-                                </div>
-                            </div>
+                            )}
                         </div>
-                    </div>
-                )}
-            </section>
 
-            {/* Quick intro strip */}
-            <section
-                className={`py-8 border-y ${
-                    isDarkMode
-                        ? "bg-gray-900 border-gray-800"
-                        : "bg-white border-gray-200"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                        {
-                            icon: ShieldCheck,
-                            title: "Safe experience",
-                            text: "Designed to feel calm, private, and respectful.",
-                        },
-                        {
-                            icon: Sparkles,
-                            title: "Guided support",
-                            text: "Clear next steps instead of overwhelming choices.",
-                        },
-                        {
-                            icon: Users,
-                            title: "Built for real users",
-                            text: "Responsive, modern, and easy to use on all screens.",
-                        },
-                    ].map((item, index) => {
-                        const Icon = item.icon;
-                        return (
-                            <div
-                                key={index}
-                                className={`rounded-2xl p-5 ${
-                                    isDarkMode
-                                        ? "bg-gray-800/70"
-                                        : "bg-gray-50"
-                                }`}
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="w-11 h-11 rounded-xl bg-blue-600/10 flex items-center justify-center">
-                                        <Icon
-                                            size={20}
-                                            className="text-blue-600"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h3
-                                            className={`font-bold mb-1 ${
-                                                isDarkMode
-                                                    ? "text-white"
-                                                    : "text-gray-900"
-                                            }`}
-                                        >
-                                            {item.title}
+                        <GlassCard
+                            isDark={isDark}
+                            className="p-5 overflow-hidden"
+                        >
+                            {hero?.image ? (
+                                <div className="relative overflow-hidden rounded-[28px] border border-white/10">
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-[#081018]/70 via-transparent to-transparent z-10" />
+                                    <img
+                                        src={hero.image}
+                                        alt={hero.title || "Mind Gate Hero"}
+                                        className="h-[500px] w-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className={`relative flex h-[500px] items-center justify-center overflow-hidden rounded-[28px] ${
+                                        isDark
+                                            ? "bg-gradient-to-br from-[#0b1824] to-[#112231]"
+                                            : "bg-gradient-to-br from-[#eef6fa] to-[#dbeaf2]"
+                                    }`}
+                                >
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(122,167,187,0.22),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(156,199,216,0.22),transparent_28%)]" />
+                                    <div className="relative z-10 text-center px-8">
+                                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-xl">
+                                            <Brain className="h-10 w-10" />
+                                        </div>
+                                        <h3 className="text-3xl font-black">
+                                            {isArabic
+                                                ? "واجهة أوضح وأكثر هدوءًا"
+                                                : "A calmer, clearer experience"}
                                         </h3>
                                         <p
-                                            className={`text-sm leading-6 ${
-                                                isDarkMode
-                                                    ? "text-gray-300"
-                                                    : "text-gray-600"
-                                            }`}
+                                            className={`mt-4 text-base leading-8 ${muted}`}
                                         >
-                                            {item.text}
+                                            {isArabic
+                                                ? "الهيرو الجديدة تعكس هوية المنصة النفسية بشكل احترافي وواضح."
+                                                : "The new hero reflects the platform identity in a more professional and focused way."}
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Search topics */}
-            <section
-                ref={searchRef}
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
-                }`}
-            >
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2
-                            className={`text-3xl md:text-5xl font-black mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Explore support topics
-                        </h2>
-                        <p
-                            className={`text-lg ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            Search for areas like stress, sleep, mood, anxiety,
-                            focus, or journaling.
-                        </p>
+                            )}
+                        </GlassCard>
                     </div>
+                </section>
 
-                    <div className="max-w-3xl mx-auto relative mb-10">
-                        <Search
-                            className={`absolute left-5 top-1/2 -translate-y-1/2 ${
-                                isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                            size={22}
-                        />
-
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={
-                                translations.search_placeholder ||
-                                "Search support topics..."
-                            }
-                            className={`w-full pl-14 pr-14 py-5 border-2 rounded-2xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-                                isDarkMode
-                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                            }`}
-                        />
-
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => setSearchQuery("")}
-                                className={`absolute right-5 top-1/2 -translate-y-1/2 ${
-                                    isDarkMode
-                                        ? "text-gray-400 hover:text-white"
-                                        : "text-gray-500 hover:text-gray-900"
-                                }`}
-                            >
-                                <X size={20} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {filteredTopics.map((topic, index) => (
-                            <motion.div
-                                key={index}
-                                whileHover={{ y: -4 }}
-                                className={`rounded-3xl p-6 border ${
-                                    isDarkMode
-                                        ? "bg-gray-800 border-gray-700"
-                                        : "bg-white border-gray-200"
-                                } shadow-sm hover:shadow-lg transition-all`}
-                            >
-                                <div className="flex items-center gap-2 mb-4">
-                                    <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-600/10 text-blue-600">
-                                        {topic.category}
-                                    </span>
-                                </div>
-
-                                <h3
-                                    className={`text-xl font-bold mb-3 ${
-                                        isDarkMode
-                                            ? "text-white"
-                                            : "text-gray-900"
-                                    }`}
-                                >
-                                    {topic.title}
-                                </h3>
-
-                                <p
-                                    className={`text-sm leading-7 ${
-                                        isDarkMode
-                                            ? "text-gray-300"
-                                            : "text-gray-600"
-                                    }`}
-                                >
-                                    {topic.description}
-                                </p>
-
-                                <button
-                                    type="button"
-                                    onClick={toggleChat}
-                                    className="mt-5 inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
-                                >
-                                    Ask the AI assistant
-                                    <ArrowRight size={16} />
-                                </button>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Core value section */}
-            <section
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-950" : "bg-white"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-3xl mb-12">
-                        <h2
-                            className={`text-3xl md:text-5xl font-black mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            A home page that matches the Mind Gate idea
-                        </h2>
-                        <p
-                            className={`text-lg leading-8 ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            Instead of travel deals and destinations, the page
-                            now introduces the platform as a modern mental
-                            wellness experience focused on support, clarity, and
-                            meaningful daily use.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {featureCards.map((item, index) => (
-                            <FeatureCard
-                                key={index}
-                                item={item}
-                                isDarkMode={isDarkMode}
-                            />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Platform tools */}
-            <section
-                ref={toolsRef}
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2
-                            className={`text-3xl md:text-5xl font-black mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Platform tools
-                        </h2>
-                        <p
-                            className={`text-lg ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            Practical sections the user can actually use inside
-                            the platform.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                        {platformTools.map((item, index) => (
-                            <ToolCard
-                                key={index}
-                                item={item}
-                                isDarkMode={isDarkMode}
-                                onPrimaryAction={toggleChat}
-                            />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Journey steps */}
-            <section
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-950" : "bg-white"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-10 items-start">
-                        <div>
-                            <h2
-                                className={`text-3xl md:text-5xl font-black mb-5 ${
-                                    isDarkMode ? "text-white" : "text-gray-900"
-                                }`}
-                            >
-                                How the user journey works
-                            </h2>
-                            <p
-                                className={`text-lg leading-8 ${
-                                    isDarkMode
-                                        ? "text-gray-400"
-                                        : "text-gray-600"
-                                }`}
-                            >
-                                The experience begins with understanding the
-                                user’s current state, then offering calm support
-                                paths, and finally encouraging small repeated
-                                habits that create real progress.
-                            </p>
-
-                            <div className="mt-8 space-y-4">
-                                {trustPoints.map((point, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-start gap-3"
-                                    >
-                                        <CheckCircle2
-                                            size={20}
-                                            className="text-blue-600 mt-1"
-                                        />
-                                        <p
-                                            className={`text-sm sm:text-base leading-7 ${
-                                                isDarkMode
-                                                    ? "text-gray-300"
-                                                    : "text-gray-700"
-                                            }`}
-                                        >
-                                            {point}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            {steps.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className={`rounded-3xl p-6 border ${
-                                        isDarkMode
-                                            ? "bg-gray-800 border-gray-700"
-                                            : "bg-gray-50 border-gray-200"
-                                    }`}
-                                >
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shrink-0">
-                                            {item.number}
-                                        </div>
-                                        <div>
-                                            <h3
-                                                className={`text-xl font-bold mb-2 ${
-                                                    isDarkMode
-                                                        ? "text-white"
-                                                        : "text-gray-900"
-                                                }`}
-                                            >
-                                                {item.title}
-                                            </h3>
-                                            <p
-                                                className={`text-sm leading-7 ${
-                                                    isDarkMode
-                                                        ? "text-gray-300"
-                                                        : "text-gray-600"
-                                                }`}
-                                            >
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Trust / benefits */}
-            <section
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-900" : "bg-gray-50"
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2
-                            className={`text-3xl md:text-5xl font-black mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Why this direction fits Mind Gate
-                        </h2>
-                        <p
-                            className={`text-lg ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                            }`}
-                        >
-                            The page now reflects a serious, supportive, and
-                            modern platform instead of a travel marketplace.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto grid max-w-7xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         {[
                             {
-                                icon: ShieldCheck,
-                                title: "Trust-first design",
-                                description:
-                                    "A calm visual language that supports the project identity.",
+                                label: t.users,
+                                value: stats.users ?? 0,
+                                icon: Users,
                             },
                             {
-                                icon: Clock3,
-                                title: "Useful daily return value",
-                                description:
-                                    "The interface encourages check-ins, reflection, and regular use.",
+                                label: t.specialists,
+                                value: stats.specialists ?? 0,
+                                icon: Stethoscope,
                             },
                             {
-                                icon: CircleHelp,
-                                title: "Clear support pathways",
-                                description:
-                                    "Users can quickly understand what they can do next.",
+                                label: t.resources,
+                                value: stats.resources ?? 0,
+                                icon: BookOpenText,
                             },
                             {
-                                icon: Star,
-                                title: "Professional presentation",
-                                description:
-                                    "The home page feels official, modern, and aligned with the platform idea.",
+                                label: t.checkins,
+                                value: stats.today_checkins ?? 0,
+                                icon: LineChart,
                             },
                         ].map((item, index) => {
                             const Icon = item.icon;
-
                             return (
-                                <div
+                                <GlassCard
                                     key={index}
-                                    className={`rounded-3xl p-6 border ${
-                                        isDarkMode
-                                            ? "bg-gray-800 border-gray-700"
-                                            : "bg-white border-gray-200"
-                                    } shadow-sm`}
+                                    isDark={isDark}
+                                    className="p-5"
                                 >
-                                    <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center mb-4">
-                                        <Icon
-                                            size={24}
-                                            className="text-blue-600"
-                                        />
+                                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                        <Icon className="h-6 w-6" />
                                     </div>
-                                    <h3
-                                        className={`text-xl font-bold mb-3 ${
-                                            isDarkMode
-                                                ? "text-white"
-                                                : "text-gray-900"
-                                        }`}
-                                    >
-                                        {item.title}
-                                    </h3>
-                                    <p
-                                        className={`text-sm leading-7 ${
-                                            isDarkMode
-                                                ? "text-gray-300"
-                                                : "text-gray-600"
-                                        }`}
-                                    >
-                                        {item.description}
-                                    </p>
-                                </div>
+                                    <div className="text-3xl font-black">
+                                        {item.value}
+                                    </div>
+                                    <div className={`mt-2 text-sm ${muted}`}>
+                                        {item.label}
+                                    </div>
+                                </GlassCard>
                             );
                         })}
                     </div>
-                </div>
-            </section>
+                </section>
 
-            {/* Final CTA */}
-            <section
-                className={`py-20 ${
-                    isDarkMode ? "bg-gray-950" : "bg-white"
-                }`}
-            >
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div
-                        className={`rounded-[32px] p-8 sm:p-10 lg:p-14 text-center border ${
-                            isDarkMode
-                                ? "bg-gray-800 border-gray-700"
-                                : "bg-gradient-to-br from-blue-50 to-white border-blue-100"
-                        } shadow-xl`}
-                    >
-                        <div className="w-16 h-16 rounded-2xl bg-blue-600/10 flex items-center justify-center mx-auto mb-6">
-                            <Brain size={30} className="text-blue-600" />
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto max-w-7xl">
+                        <SectionTitle
+                            title={t.featuresTitle}
+                            subtitle={t.featuresSubtitle}
+                            isDark={isDark}
+                        />
+
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                            {featureCards.map((item, index) => {
+                                const Icon = item.icon;
+
+                                return (
+                                    <GlassCard
+                                        key={index}
+                                        isDark={isDark}
+                                        className="p-7"
+                                    >
+                                        <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                            <Icon className="h-7 w-7" />
+                                        </div>
+                                        <h3 className="text-xl font-extrabold">
+                                            {item.title}
+                                        </h3>
+                                        <p
+                                            className={`mt-3 text-sm leading-8 ${muted}`}
+                                        >
+                                            {item.text}
+                                        </p>
+                                    </GlassCard>
+                                );
+                            })}
                         </div>
+                    </div>
+                </section>
 
-                        <h2
-                            className={`text-3xl md:text-5xl font-black mb-4 ${
-                                isDarkMode ? "text-white" : "text-gray-900"
-                            }`}
-                        >
-                            Ready to continue shaping Mind Gate?
-                        </h2>
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2">
+                        <GlassCard isDark={isDark} className="p-8">
+                            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                <NotebookPen className="h-7 w-7" />
+                            </div>
 
-                        <p
-                            className={`text-lg leading-8 max-w-3xl mx-auto ${
-                                isDarkMode ? "text-gray-300" : "text-gray-600"
-                            }`}
-                        >
-                            This version gives you a home page that actually
-                            matches the mental wellness idea, looks professional,
-                            and stays clean across screen sizes.
-                        </p>
+                            <h3 className="text-3xl font-black">
+                                {t.quickAssessmentTitle}
+                            </h3>
+                            <p className={`mt-4 text-base leading-8 ${muted}`}>
+                                {t.quickAssessmentText}
+                            </p>
 
-                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                             <button
                                 type="button"
-                                onClick={toggleChat}
-                                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold"
+                                onClick={() => setAssessmentOpen(true)}
+                                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-sm font-bold text-white shadow-xl"
                             >
-                                Open AI assistant
-                                <MessageCircle size={18} />
+                                {t.ctaSecondary}
+                                <ArrowRight className="h-4 w-4" />
                             </button>
 
+                            {assessmentResult && (
+                                <div
+                                    className={`mt-6 rounded-3xl border p-5 ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5"
+                                            : "border-slate-200 bg-slate-50"
+                                    }`}
+                                >
+                                    <div className="mb-2 text-lg font-extrabold">
+                                        {t.resultTitle}
+                                    </div>
+                                    <div className="text-sm font-bold uppercase text-[#7aa7bb]">
+                                        {assessmentResult.level}
+                                    </div>
+                                    <p
+                                        className={`mt-3 text-sm leading-8 ${muted}`}
+                                    >
+                                        {assessmentResult.summary}
+                                    </p>
+                                    <p className="mt-3 text-sm font-semibold">
+                                        {assessmentResult.recommendation}
+                                    </p>
+                                </div>
+                            )}
+                        </GlassCard>
+
+                        <GlassCard isDark={isDark} className="p-8">
+                            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                <Activity className="h-7 w-7" />
+                            </div>
+
+                            <h3 className="text-3xl font-black">
+                                {t.dailyCheckinTitle}
+                            </h3>
+                            <p className={`mt-4 text-base leading-8 ${muted}`}>
+                                {t.dailyCheckinText}
+                            </p>
+
+                            {user ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCheckinOpen(true)}
+                                        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-sm font-bold text-white shadow-xl"
+                                    >
+                                        {hasTodayCheckin
+                                            ? t.todaySaved
+                                            : t.submitCheckin}
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+
+                                    {latestCheckin && (
+                                        <div
+                                            className={`mt-6 rounded-3xl border p-5 ${
+                                                isDark
+                                                    ? "border-white/10 bg-white/5"
+                                                    : "border-slate-200 bg-slate-50"
+                                            }`}
+                                        >
+                                            <div className="mb-3 text-lg font-extrabold">
+                                                {isArabic
+                                                    ? "آخر متابعة لك"
+                                                    : "Your latest check-in"}
+                                            </div>
+                                            <div
+                                                className={`grid grid-cols-2 gap-3 text-sm ${muted}`}
+                                            >
+                                                <div>
+                                                    Mood: {latestCheckin.mood}
+                                                    /10
+                                                </div>
+                                                <div>
+                                                    Stress:{" "}
+                                                    {latestCheckin.stress}/10
+                                                </div>
+                                                <div>
+                                                    Energy:{" "}
+                                                    {latestCheckin.energy}/10
+                                                </div>
+                                                <div>
+                                                    Focus: {latestCheckin.focus}
+                                                    /10
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <Link
+                                    href={route("login")}
+                                    className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-sm font-bold text-white shadow-xl"
+                                >
+                                    {isArabic
+                                        ? "سجل الدخول للمتابعة اليومية"
+                                        : "Login for daily tracking"}
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            )}
+                        </GlassCard>
+                    </div>
+                </section>
+
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto max-w-7xl">
+                        <SectionTitle
+                            title={t.specialistsTitle}
+                            subtitle={t.specialistsSubtitle}
+                            isDark={isDark}
+                        />
+
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                            {featuredSpecialists.length ? (
+                                featuredSpecialists.map((item) => (
+                                    <GlassCard
+                                        key={item.id}
+                                        isDark={isDark}
+                                        className="p-6"
+                                    >
+                                        <div className="flex items-start gap-4">
+                                            <div
+                                                className={`h-16 w-16 overflow-hidden rounded-2xl ${isDark ? "bg-white/5" : "bg-slate-100"}`}
+                                            >
+                                                {item.image ? (
+                                                    <img
+                                                        src={item.image}
+                                                        alt={item.full_name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">
+                                                        <Stethoscope className="h-7 w-7 text-[#7aa7bb]" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="truncate text-lg font-extrabold">
+                                                    {item.full_name}
+                                                </h3>
+                                                <p className="mt-1 text-sm font-semibold text-[#7aa7bb]">
+                                                    {item.job_title ||
+                                                        item.specialization}
+                                                </p>
+                                                <p
+                                                    className={`mt-3 line-clamp-3 text-sm leading-7 ${muted}`}
+                                                >
+                                                    {item.bio ||
+                                                        item.specialization}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                ))
+                            ) : (
+                                <GlassCard
+                                    isDark={isDark}
+                                    className="col-span-full p-8 text-center"
+                                >
+                                    <p className={muted}>{t.noSpecialists}</p>
+                                </GlassCard>
+                            )}
+                        </div>
+
+                        <div className="mt-8 text-center">
                             <Link
-                                href="/ContactPage"
-                                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold transition-colors ${
-                                    isDarkMode
-                                        ? "bg-gray-700 text-white hover:bg-gray-600"
-                                        : "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
-                                }`}
+                                href={route("specialists.index")}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-sm font-bold text-white shadow-xl"
                             >
-                                Contact us
-                                <ArrowRight size={18} />
+                                {t.viewAllSpecialists}
+                                <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <Footer isDarkMode={isDarkMode} />
+                <section className="px-6 md:px-12 lg:px-16 pb-20">
+                    <div className="mx-auto max-w-7xl">
+                        <SectionTitle
+                            title={t.resourcesTitle}
+                            subtitle={t.resourcesSubtitle}
+                            isDark={isDark}
+                        />
 
-            <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-                {isTooltipVisible && (
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                            {featuredResources.length ? (
+                                featuredResources.map((item) => (
+                                    <GlassCard
+                                        key={item.id}
+                                        isDark={isDark}
+                                        className="overflow-hidden"
+                                    >
+                                        <div
+                                            className={`h-48 ${isDark ? "bg-white/5" : "bg-slate-100"}`}
+                                        >
+                                            {item.cover_image ? (
+                                                <img
+                                                    src={item.cover_image}
+                                                    alt={item.title}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center">
+                                                    <BookOpenText className="h-10 w-10 text-[#7aa7bb]" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-6">
+                                            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold text-[#7aa7bb]">
+                                                <span>{item.type}</span>
+                                                {item.category ? (
+                                                    <span>
+                                                        • {item.category}
+                                                    </span>
+                                                ) : null}
+                                                {item.read_time ? (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <Clock3 className="h-3.5 w-3.5" />
+                                                        {item.read_time} min
+                                                    </span>
+                                                ) : null}
+                                            </div>
+
+                                            <h3 className="text-xl font-extrabold">
+                                                {item.title}
+                                            </h3>
+                                            <p
+                                                className={`mt-3 line-clamp-3 text-sm leading-8 ${muted}`}
+                                            >
+                                                {item.excerpt || ""}
+                                            </p>
+
+                                            <div className="mt-5">
+                                                <Link
+                                                    href={route(
+                                                        "resources.show",
+                                                        item.slug,
+                                                    )}
+                                                    className="inline-flex items-center gap-2 font-bold text-[#7aa7bb]"
+                                                >
+                                                    {isArabic
+                                                        ? "قراءة المزيد"
+                                                        : "Read more"}
+                                                    <ArrowRight className="h-4 w-4" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                ))
+                            ) : (
+                                <GlassCard
+                                    isDark={isDark}
+                                    className="col-span-full p-8 text-center"
+                                >
+                                    <p className={muted}>{t.noResources}</p>
+                                </GlassCard>
+                            )}
+                        </div>
+
+                        <div className="mt-8 text-center">
+                            <Link
+                                href={route("resources.index")}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-sm font-bold text-white shadow-xl"
+                            >
+                                {t.viewAllResources}
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="px-6 md:px-12 lg:px-16 pb-24">
+                    <div className="mx-auto max-w-7xl">
+                        <GlassCard isDark={isDark} className="p-10">
+                            <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] items-center">
+                                <div>
+                                    <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7aa7bb] to-[#6797ab] text-white shadow-lg">
+                                        <Building2 className="h-7 w-7" />
+                                    </div>
+
+                                    <h3 className="text-4xl font-black">
+                                        {t.orgTitle}
+                                    </h3>
+                                    <p
+                                        className={`mt-4 text-lg leading-9 ${muted}`}
+                                    >
+                                        {t.orgText}
+                                    </p>
+
+                                    <div className="mt-6 flex flex-wrap gap-3">
+                                        {[
+                                            isArabic
+                                                ? "خصوصية عالية"
+                                                : "High privacy",
+                                            isArabic
+                                                ? "تقييم ومتابعة"
+                                                : "Assessment and follow-up",
+                                            isArabic
+                                                ? "قابلية توسع مؤسسية"
+                                                : "Organization-ready",
+                                        ].map((text, index) => (
+                                            <div
+                                                key={index}
+                                                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+                                                    isDark
+                                                        ? "bg-white/5 text-white/85"
+                                                        : "bg-slate-100 text-slate-700"
+                                                }`}
+                                            >
+                                                <CheckCircle2 className="h-4 w-4 text-[#7aa7bb]" />
+                                                {text}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div
+                                    className={`rounded-[28px] border p-6 ${
+                                        isDark
+                                            ? "border-white/10 bg-white/5"
+                                            : "border-slate-200 bg-slate-50"
+                                    }`}
+                                >
+                                    <div className="space-y-4">
+                                        {[
+                                            isArabic
+                                                ? "مسار استخدام واضح من أول دخول"
+                                                : "A clear user flow from the first visit",
+                                            isArabic
+                                                ? "ربط بين التقييم والموارد والمتابعة"
+                                                : "A connection between assessment, resources, and follow-up",
+                                            isArabic
+                                                ? "واجهة حديثة مرتبطة بالمود واللغة"
+                                                : "A modern interface synced with theme and language",
+                                            isArabic
+                                                ? "هيكل رسمي قابل للتسليم والتوسع"
+                                                : "A formal structure ready for delivery and expansion",
+                                        ].map((item, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-start gap-3"
+                                            >
+                                                <Star className="mt-1 h-5 w-5 text-[#7aa7bb]" />
+                                                <span
+                                                    className={`text-sm leading-7 ${muted}`}
+                                                >
+                                                    {item}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </GlassCard>
+                    </div>
+                </section>
+            </main>
+
+            <Footer />
+
+            <AnimatePresence>
+                {assessmentOpen && (
                     <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className={`relative max-w-xs p-4 rounded-2xl shadow-lg ${
-                            isDarkMode
-                                ? "bg-gray-800 text-white"
-                                : "bg-white text-gray-900 border border-gray-200"
-                        }`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[90] bg-black/55 backdrop-blur-sm p-4"
                     >
-                        <button
-                            type="button"
-                            onClick={() => setIsTooltipVisible(false)}
-                            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                            className={`mx-auto mt-24 max-w-3xl rounded-[32px] border p-6 shadow-2xl ${
+                                isDark
+                                    ? "bg-[#081018] border-white/10 text-white"
+                                    : "bg-white border-slate-200 text-slate-900"
+                            }`}
                         >
-                            <X size={16} />
-                        </button>
-                        <p className="text-sm font-semibold mb-1">
-                            Need support?
-                        </p>
-                        <p className="text-xs opacity-80 leading-6">
-                            The Mind Gate assistant can help you explore tools
-                            and support topics.
-                        </p>
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="text-2xl font-black">
+                                    {t.quickAssessmentTitle}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setAssessmentOpen(false)}
+                                    className="rounded-xl p-2 hover:bg-white/5"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <form
+                                onSubmit={submitAssessment}
+                                className="space-y-5"
+                            >
+                                <div className="grid gap-5 md:grid-cols-2">
+                                    <input
+                                        type="text"
+                                        placeholder={
+                                            isArabic ? "الاسم" : "Name"
+                                        }
+                                        value={assessmentForm.full_name}
+                                        onChange={(e) =>
+                                            setAssessmentForm((prev) => ({
+                                                ...prev,
+                                                full_name: e.target.value,
+                                            }))
+                                        }
+                                        className={`rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+
+                                    <input
+                                        type="email"
+                                        placeholder={
+                                            isArabic
+                                                ? "البريد الإلكتروني"
+                                                : "Email"
+                                        }
+                                        value={assessmentForm.email}
+                                        onChange={(e) =>
+                                            setAssessmentForm((prev) => ({
+                                                ...prev,
+                                                email: e.target.value,
+                                            }))
+                                        }
+                                        className={`rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {[
+                                        [
+                                            "anxiety",
+                                            isArabic ? "القلق" : "Anxiety",
+                                        ],
+                                        [
+                                            "stress",
+                                            isArabic ? "التوتر" : "Stress",
+                                        ],
+                                        [
+                                            "sleep_quality",
+                                            isArabic
+                                                ? "جودة النوم"
+                                                : "Sleep quality",
+                                        ],
+                                        [
+                                            "mood_balance",
+                                            isArabic
+                                                ? "توازن المزاج"
+                                                : "Mood balance",
+                                        ],
+                                        [
+                                            "focus",
+                                            isArabic ? "التركيز" : "Focus",
+                                        ],
+                                        [
+                                            "energy",
+                                            isArabic ? "الطاقة" : "Energy",
+                                        ],
+                                    ].map(([key, label]) => (
+                                        <div key={key}>
+                                            <label className="mb-2 block text-sm font-bold">
+                                                {label}
+                                            </label>
+                                            <select
+                                                value={assessmentForm[key]}
+                                                onChange={(e) =>
+                                                    setAssessmentForm(
+                                                        (prev) => ({
+                                                            ...prev,
+                                                            [key]: Number(
+                                                                e.target.value,
+                                                            ),
+                                                        }),
+                                                    )
+                                                }
+                                                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                                    isDark
+                                                        ? "border-white/10 bg-white/5 text-white"
+                                                        : "border-slate-200 bg-slate-50"
+                                                }`}
+                                            >
+                                                {[1, 2, 3, 4, 5].map((n) => (
+                                                    <option key={n} value={n}>
+                                                        {n}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={assessmentLoading}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-base font-bold text-white shadow-xl"
+                                >
+                                    {assessmentLoading ? t.saving : t.send}
+                                </button>
+                            </form>
+                        </motion.div>
                     </motion.div>
                 )}
+            </AnimatePresence>
 
-                <ChatBot
-                    isChatOpen={isChatOpen}
-                    toggleChat={toggleChat}
-                    isDarkMode={isDarkMode}
-                />
-            </div>
+            <AnimatePresence>
+                {checkinOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[90] bg-black/55 backdrop-blur-sm p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                            className={`mx-auto mt-24 max-w-2xl rounded-[32px] border p-6 shadow-2xl ${
+                                isDark
+                                    ? "bg-[#081018] border-white/10 text-white"
+                                    : "bg-white border-slate-200 text-slate-900"
+                            }`}
+                        >
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="text-2xl font-black">
+                                    {t.dailyCheckinTitle}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setCheckinOpen(false)}
+                                    className="rounded-xl p-2 hover:bg-white/5"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <form
+                                onSubmit={submitCheckin}
+                                className="space-y-5"
+                            >
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {[
+                                        ["mood", isArabic ? "المزاج" : "Mood"],
+                                        [
+                                            "stress",
+                                            isArabic ? "التوتر" : "Stress",
+                                        ],
+                                        [
+                                            "energy",
+                                            isArabic ? "الطاقة" : "Energy",
+                                        ],
+                                        [
+                                            "focus",
+                                            isArabic ? "التركيز" : "Focus",
+                                        ],
+                                    ].map(([key, label]) => (
+                                        <div key={key}>
+                                            <label className="mb-2 block text-sm font-bold">
+                                                {label}
+                                            </label>
+                                            <select
+                                                value={checkinForm[key]}
+                                                onChange={(e) =>
+                                                    setCheckinForm((prev) => ({
+                                                        ...prev,
+                                                        [key]: Number(
+                                                            e.target.value,
+                                                        ),
+                                                    }))
+                                                }
+                                                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                                    isDark
+                                                        ? "border-white/10 bg-white/5 text-white"
+                                                        : "border-slate-200 bg-slate-50"
+                                                }`}
+                                            >
+                                                {[
+                                                    1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                                    10,
+                                                ].map((n) => (
+                                                    <option key={n} value={n}>
+                                                        {n}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">
+                                        {isArabic
+                                            ? "عدد ساعات النوم"
+                                            : "Sleep hours"}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="24"
+                                        step="0.5"
+                                        value={checkinForm.sleep_hours}
+                                        onChange={(e) =>
+                                            setCheckinForm((prev) => ({
+                                                ...prev,
+                                                sleep_hours: e.target.value,
+                                            }))
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-bold">
+                                        {isArabic ? "ملاحظات" : "Notes"}
+                                    </label>
+                                    <textarea
+                                        rows="4"
+                                        value={checkinForm.notes}
+                                        onChange={(e) =>
+                                            setCheckinForm((prev) => ({
+                                                ...prev,
+                                                notes: e.target.value,
+                                            }))
+                                        }
+                                        className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ${
+                                            isDark
+                                                ? "border-white/10 bg-white/5 text-white"
+                                                : "border-slate-200 bg-slate-50"
+                                        }`}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={checkinLoading}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7aa7bb] to-[#6797ab] px-6 py-4 text-base font-bold text-white shadow-xl"
+                                >
+                                    {checkinLoading ? t.saving : t.send}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
-};
-
-export default HomePage;
+}

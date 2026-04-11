@@ -13,9 +13,28 @@ use Illuminate\Http\RedirectResponse;
 
 class LoginController extends Controller
 {
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
-        return Inertia::render('Admin/Login');
+        if (Auth::guard('admin')->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if (Auth::guard('web')->check()) {
+            $user = Auth::guard('web')->user();
+
+            if ($user && !$user->profile_completed) {
+                return redirect()->route('onboarding.create');
+            }
+
+            return redirect()->route('home');
+        }
+
+        return Inertia::render('Admin/Login', [
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -23,13 +42,9 @@ class LoginController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-            'remember' => ['nullable', 'boolean'],
         ]);
 
-        if (!Auth::guard('admin')->attempt([
-            'email' => $credentials['email'],
-            'password' => $credentials['password'],
-        ], $request->boolean('remember'))) {
+        if (!Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             Log::warning('Admin login failed', [
                 'email' => $request->email,
             ]);
@@ -44,11 +59,11 @@ class LoginController extends Controller
         $admin = Auth::guard('admin')->user();
 
         Log::info('Admin logged in', [
-            'admin_id' => $admin?->id,
-            'email' => $admin?->email,
+            'admin_id' => $admin->id,
+            'email' => $admin->email,
         ]);
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -56,6 +71,7 @@ class LoginController extends Controller
         $adminId = Auth::guard('admin')->id();
 
         Auth::guard('admin')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

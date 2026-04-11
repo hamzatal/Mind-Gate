@@ -9,7 +9,6 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\CompanyAuth\CompanyController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -18,16 +17,12 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::post('company/register', [RegisteredUserController::class, 'storeCompany'])
-        ->name('company.register');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    Route::post('company/login', [CompanyController::class, 'login'])
-        ->name('company.login');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
@@ -66,15 +61,3 @@ Route::middleware('auth')->group(function () {
         ->name('logout');
 });
 
-Route::middleware('auth:company')->group(function () {
-    Route::post('company/logout', [CompanyController::class, 'logout'])
-        ->name('company.logout');
-
-    Route::get('company/confirm-password', [ConfirmablePasswordController::class, 'show'])
-        ->name('company.password.confirm');
-
-    Route::post('company/confirm-password', [ConfirmablePasswordController::class, 'store']);
-
-    Route::put('company/password', [PasswordController::class, 'update'])
-        ->name('company.password.update');
-});
